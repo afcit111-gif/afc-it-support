@@ -2360,26 +2360,18 @@ export default function App() {
                             <BarChart3 size={14} className="text-indigo-500" />
                           </h2>
 
-                          {/* Legend */}
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {STATUS_FLOW.map(status => (
-                              <div key={status} className="flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_HEX_COLORS[status] }} />
-                                <span className="text-[9px] font-bold text-stone-500 uppercase">{STATUS_LABELS[status].replace('\n', ' ')}</span>
-                              </div>
-                            ))}
-                          </div>
-
                           <div id="progress-scroll-container" className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1">
                             {combinedProgress.map((cp, i) => (
                               <div key={i} className="group">
                                 <div className="flex items-center justify-between mb-1.5">
                                   <span className="text-sm font-bold text-stone-900">{cp.plan}</span>
-                                  <span className="text-xs font-bold text-stone-500">{cp.total} Vehicles</span>
+                                  <span className="text-xs font-bold text-stone-500">
+                                    Total {cp.total} Vehicles ({Math.round((cp.statuses.find(s => s.status === 'Check Out')?.count || 0) / cp.total * 100)}% Completed)
+                                  </span>
                                 </div>
                                 
                                 {/* Stacked Bar */}
-                                <div className="h-2.5 w-full bg-stone-100 rounded-full overflow-hidden flex">
+                                <div className="h-4 w-full bg-stone-100 rounded-full overflow-hidden flex shadow-inner">
                                   {cp.statuses.map((s, idx) => (
                                     <motion.div 
                                       key={s.status}
@@ -2395,7 +2387,7 @@ export default function App() {
                                 {/* Detail Text */}
                                 <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
                                   {cp.statuses.map(s => (
-                                    <div key={s.status} className="flex items-center gap-1 text-[10px] font-semibold" style={{ color: s.color }}>
+                                    <div key={s.status} className="flex items-center gap-1 text-xs font-bold" style={{ color: s.color }}>
                                       <span>{STATUS_LABELS[s.status].split('\n')[0]}:</span>
                                       <span>{s.count}</span>
                                     </div>
@@ -2577,7 +2569,7 @@ export default function App() {
                                             <div className="flex items-center justify-between pt-4 border-t border-stone-100">
                                               <div className="flex items-center gap-2 text-stone-400">
                                                 <Clock size={14} />
-                                                <span className="text-sm font-bold">
+                                                <span className="text-xs font-bold">
                                                   Last Updated: {v.invoiceReceiving ? new Date(v.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                                                 </span>
                                               </div>
@@ -2611,13 +2603,19 @@ export default function App() {
                                                   const delayStatus = getDelayStatus(v.deliveryDate, v.planLoad, v.checkIn);
                                                   if (!delayStatus) return null;
                                                   return delayStatus.status === 'Delay' ? (
-                                                    <span className="px-2 py-1 rounded-md text-[9px] font-bold bg-red-100 text-red-600 whitespace-nowrap">
-                                                      DELAY {delayStatus.mins}m
-                                                    </span>
+                                                    <div className="flex items-center gap-1.5">
+                                                      <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                                      <span className="text-[9px] font-bold text-red-600 uppercase tracking-widest whitespace-nowrap">
+                                                        DELAY {delayStatus.mins}m
+                                                      </span>
+                                                    </div>
                                                   ) : (
-                                                    <span className="px-2 py-1 rounded-md text-[9px] font-bold bg-emerald-100 text-emerald-600 whitespace-nowrap">
-                                                      ON TIME
-                                                    </span>
+                                                    <div className="flex items-center gap-1.5">
+                                                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                      <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest whitespace-nowrap">
+                                                        ON TIME
+                                                      </span>
+                                                    </div>
                                                   );
                                                 })()}
                                               </div>
