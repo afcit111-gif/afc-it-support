@@ -2582,7 +2582,19 @@ export default function App() {
                                                 </span>
                                               </div>
                                               <div className="flex flex-col items-end gap-1.5">
-                                                {!isCheckOut && (
+                                                {isCheckOut ? (
+                                                  <div className="flex items-center gap-1.5">
+                                                    <motion.div 
+                                                      animate={{ 
+                                                        scale: [1, 1.3, 1],
+                                                        opacity: [0.6, 1, 0.6]
+                                                      }}
+                                                      transition={{ duration: 2, repeat: Infinity }}
+                                                      className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" 
+                                                    />
+                                                    <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Completed</span>
+                                                  </div>
+                                                ) : (
                                                   <div className="flex items-center gap-1.5">
                                                     <motion.div 
                                                       animate={{ 
