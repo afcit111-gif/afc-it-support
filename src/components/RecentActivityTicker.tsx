@@ -48,21 +48,35 @@ export const RecentActivityTicker = ({ activities, children }: { activities: Act
       setShowAlert(true);
       setAnimationKey(prev => prev + 1); // Reset animation to top
       
-      const timer = setTimeout(() => {
-        setIsPaused(false);
-        setShowAlert(false);
-      }, 5000); // Alert and pause for 5 seconds
+      // Border animation takes 6 seconds
+      const alertDuration = 6000;
+      const pauseAfterAlert = 5000;
       
-      return () => clearTimeout(timer);
+      const alertTimer = setTimeout(() => {
+        setShowAlert(false);
+      }, alertDuration);
+      
+      const pauseTimer = setTimeout(() => {
+        setIsPaused(false);
+      }, alertDuration + pauseAfterAlert);
+      
+      return () => {
+        clearTimeout(alertTimer);
+        clearTimeout(pauseTimer);
+      };
     }
   }, [recent10[0]?.timeString]); // Trigger when the most recent item changes
+
+  const scrollDuration = recent10.length * 2.5;
+  const pauseDuration = 5;
+  const totalDuration = scrollDuration + pauseDuration;
 
   return (
     <div className="flex-1 mx-8 flex items-center gap-6">
       <div className="flex-1 flex flex-col gap-2">
         <div className="flex items-center gap-2 text-stone-500 px-1">
-          <div className="flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-md">
-            <Activity size={12} className="animate-pulse" />
+          <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md transition-colors duration-500 ${showAlert ? 'bg-red-50 text-red-600 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : 'bg-indigo-50 text-indigo-600'}`}>
+            <Activity size={12} className={showAlert ? "animate-bounce" : "animate-pulse"} />
             <span className="text-[10px] font-black uppercase tracking-widest">Live Feed</span>
           </div>
           <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Recent Updates</span>
@@ -83,7 +97,7 @@ export const RecentActivityTicker = ({ activities, children }: { activities: Act
                   x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)"
                   rx="15" fill="none"
                   stroke="#ef4444" strokeWidth="2"
-                  strokeOpacity="0.4"
+                  strokeOpacity="0.6"
                   strokeDasharray="100 250"
                   filter="url(#glow)"
                   animate={{ strokeDashoffset: [0, -1000] }}
@@ -92,7 +106,7 @@ export const RecentActivityTicker = ({ activities, children }: { activities: Act
               </svg>
               <motion.div 
                 initial={{ opacity: 0 }}
-                animate={{ opacity: [0, 0.05, 0] }}
+                animate={{ opacity: [0, 0.08, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
                 className="absolute inset-0 bg-red-500 rounded-2xl"
               />
@@ -103,12 +117,12 @@ export const RecentActivityTicker = ({ activities, children }: { activities: Act
             <motion.div
               key={animationKey}
               initial={{ y: 0 }}
-              animate={needsScroll && !isPaused ? { y: [0, -scrollDistance] } : { y: 0 }}
+              animate={needsScroll && !isPaused ? { y: [0, 0, -scrollDistance] } : { y: 0 }}
               transition={needsScroll && !isPaused ? { 
-                duration: recent10.length * 2.5, 
+                duration: totalDuration, 
+                times: [0, pauseDuration / totalDuration, 1],
                 ease: "linear",
-                repeat: Infinity,
-                repeatDelay: 5 // Pause for 5 seconds at the start/end before jumping back
+                repeat: Infinity
               } : {}}
               className="absolute top-0 left-0 right-0 flex flex-col"
             >
