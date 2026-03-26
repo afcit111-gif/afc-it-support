@@ -89,25 +89,25 @@ export const RecentActivityTicker = ({ activities, children }: { activities: Act
               <svg className="absolute inset-0 w-full h-full rounded-2xl overflow-visible">
                 <defs>
                   <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feGaussianBlur stdDeviation="2" result="blur" />
                     <feComposite in="SourceGraphic" in2="blur" operator="over" />
                   </filter>
                 </defs>
                 <motion.rect
                   x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)"
                   rx="15" fill="none"
-                  stroke="#ef4444" strokeWidth="2"
-                  strokeOpacity="0.6"
-                  strokeDasharray="100 250"
+                  stroke="#ef4444" strokeWidth="1.5"
+                  strokeOpacity="0.4"
+                  strokeDasharray="80 300"
                   filter="url(#glow)"
                   animate={{ strokeDashoffset: [0, -1000] }}
-                  transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
                 />
               </svg>
               <motion.div 
                 initial={{ opacity: 0 }}
-                animate={{ opacity: [0, 0.08, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                animate={{ opacity: [0, 0.04, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
                 className="absolute inset-0 bg-red-500 rounded-2xl"
               />
             </div>
@@ -167,10 +167,15 @@ export const RecentActivityTicker = ({ activities, children }: { activities: Act
 
                     {/* Status (Right aligned) */}
                     <div className="flex items-center gap-2 shrink-0 min-w-[140px] justify-end">
-                      <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: STATUS_HEX_COLORS[activity.status] || '#d6d3d1' }} />
-                      <span className="text-xs font-black uppercase tracking-widest whitespace-nowrap" style={{ color: STATUS_HEX_COLORS[activity.status] }}>
-                        {STATUS_LABELS[activity.status].replace('\n', ' ')}
-                      </span>
+                      <div className="w-1.5 h-1.5 rounded-full shadow-sm" style={{ backgroundColor: STATUS_HEX_COLORS[activity.status] || '#d6d3d1' }} />
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap leading-none" style={{ color: STATUS_HEX_COLORS[activity.status] }}>
+                          {STATUS_LABELS[activity.status].split('\n')[1].replace('(', '').replace(')', '')}
+                        </span>
+                        <span className="text-[8px] font-bold opacity-60 whitespace-nowrap leading-none mt-0.5" style={{ color: STATUS_HEX_COLORS[activity.status] }}>
+                          {STATUS_LABELS[activity.status].split('\n')[0]}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );

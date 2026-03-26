@@ -8,7 +8,6 @@ import {
   User, 
   Phone, 
   AlertCircle,
-  RefreshCw,
   ChevronRight,
   LayoutDashboard,
   LogOut,
@@ -29,9 +28,14 @@ import {
   Monitor,
   Maximize,
   Minimize,
+  Minimize2,
+  Target,
   Table,
   Activity,
-  Edit2
+  Edit2,
+  Package,
+  Loader2,
+  RotateCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as XLSX from 'xlsx';
@@ -95,6 +99,28 @@ export default function App() {
   const handOverRef = useRef<HTMLDivElement>(null);
   const dashboardScrollRef = useRef<HTMLDivElement>(null);
   const progressScrollRef = useRef<HTMLDivElement>(null);
+  const [topSectionMode] = useState<'efficiency' | 'status'>('efficiency');
+  const [dashboardTitleMode, setDashboardTitleMode] = useState<'title' | 'plan'>('title');
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Real-time clock for dashboard
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Dashboard alternation logic
+  useEffect(() => {
+    if (!isFullScreenSummary) return;
+    
+    const interval = setInterval(() => {
+      // setTopSectionMode(prev => prev === 'status' ? 'efficiency' : 'status');
+      setDashboardTitleMode(prev => prev === 'title' ? 'plan' : 'title');
+    }, 30000); // 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [isFullScreenSummary]);
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showArchiveHistory, setShowArchiveHistory] = useState(false);
@@ -118,6 +144,18 @@ export default function App() {
     planLoad: '18:30',
     vehiclePlan: '18:30'
   });
+
+  const getStatusIcon = (status: Status) => {
+    switch (status) {
+      case 'Waiting': return Clock;
+      case 'Check In': return Truck;
+      case 'Invoice Receiving': return FileDown;
+      case 'Checking': return Search;
+      case 'Handover': return Package;
+      case 'Check Out': return CheckCircle2;
+      default: return Activity;
+    }
+  };
 
   // Test connection to Firestore
   useEffect(() => {
@@ -143,8 +181,8 @@ export default function App() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setMetricsView(prev => prev === 'overview' ? 'efficiency' : 'overview');
-    }, 20000); // Rotate metrics every 20 seconds
+      // setTopSectionMode(prev => prev === 'efficiency' ? 'status' : 'efficiency');
+    }, 30000); // 30 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -280,7 +318,7 @@ export default function App() {
     
     setConfirm({
       title: 'Confirm Revert',
-      icon: <RefreshCw size={32} />,
+      icon: <RotateCcw size={32} />,
       message: `Are you sure you want to revert status from "${STATUS_LABELS[currentStatus]}" back to "${STATUS_LABELS[prevStatus]}"? This will clear the timestamp for the current status.`,
       showRemarkInput: true,
       onConfirm: async (remark) => {
@@ -402,35 +440,47 @@ export default function App() {
   }, [vehicles]);
 
   const handleExportExcel = (data: VehicleRecord[], filename: string) => {
-    const dataToExport = data.map(v => {
-      const qNum = vehicleQueues[v.id];
-      
-      return {
-        'Seq': v.seqLoading,
-        'Delivery Date': v.deliveryDate,
-        'Trip': v.trip,
-        'Sub': v.sub,
-        'Plan Load': v.planLoad,
-        'Queue': qNum || '-',
-        'Driver': v.driverName,
-        'Phone': v.driverPhone,
-        'Vehicle': v.vehicleNumber,
-        'Status': STATUS_LABELS[v.status],
-        'Remark': v.remark || '-',
-        'Check-In': v.checkIn ? new Date(v.checkIn).toLocaleTimeString() : '-',
-        'Document Received': v.invoiceReceiving ? new Date(v.invoiceReceiving).toLocaleTimeString() : '-',
-        'Checking': v.checking ? new Date(v.checking).toLocaleTimeString() : '-',
-        'Loading': v.handover ? new Date(v.handover).toLocaleTimeString() : '-',
-        'Check-Out': v.checkOut ? new Date(v.checkOut).toLocaleTimeString() : '-',
-        'Total Time': v.totalTime || '-',
-        'Archived At': v.archivedAt ? new Date(v.archivedAt).toLocaleString() : '-'
-      };
-    });
+    if (!Array.isArray(data)) {
+      console.error('Export failed: data is not an array', data);
+      showToast('Export failed: Invalid data format', 'error');
+      return;
+    }
 
-    const ws = XLSX.utils.json_to_sheet(dataToExport);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Vehicles");
-    XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    try {
+      const dataToExport = data.map(v => {
+        const qNum = vehicleQueues[v.id];
+        
+        return {
+          'Seq': v.seqLoading,
+          'Delivery Date': v.deliveryDate,
+          'Trip': v.trip,
+          'Sub': v.sub,
+          'Plan Load': v.planLoad,
+          'Queue': qNum || '-',
+          'Driver': v.driverName,
+          'Phone': v.driverPhone,
+          'Vehicle': v.vehicleNumber,
+          'Status': STATUS_LABELS[v.status],
+          'Remark': v.remark || '-',
+          'Check-In': v.checkIn ? new Date(v.checkIn).toLocaleTimeString() : '-',
+          'Document Received': v.invoiceReceiving ? new Date(v.invoiceReceiving).toLocaleTimeString() : '-',
+          'Checking': v.checking ? new Date(v.checking).toLocaleTimeString() : '-',
+          'Loading': v.handover ? new Date(v.handover).toLocaleTimeString() : '-',
+          'Check-Out': v.checkOut ? new Date(v.checkOut).toLocaleTimeString() : '-',
+          'Total Time': v.totalTime || '-',
+          'Archived At': v.archivedAt ? new Date(v.archivedAt).toLocaleString() : '-'
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Vehicles");
+      XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      showToast('Excel exported successfully!', 'success');
+    } catch (error) {
+      console.error('Export error:', error);
+      showToast('Export failed: ' + (error instanceof Error ? error.message : 'Unknown error'), 'error');
+    }
   };
 
   const handleCaptureSummary = async (type: 'all' | 'handover' = 'all') => {
@@ -438,16 +488,36 @@ export default function App() {
     if (!targetRef.current) return;
     
     try {
-      showToast(`Capturing ${type === 'all' ? 'summary' : 'handover progress'}...`, 'success');
+      showToast(`Capturing ${type === 'all' ? 'Full Report' : 'Table Only'}...`, 'success');
       
       // Find scrollable container if it's the "all" capture
       const scrollContainer = type === 'all' ? targetRef.current.querySelector('.overflow-y-auto') as HTMLElement : null;
       const originalMaxHeight = scrollContainer?.style.maxHeight;
       const originalOverflow = scrollContainer?.style.overflow;
+      const originalHeight = scrollContainer?.style.height;
+
+      // Also handle the target's parent to ensure no clipping
+      const parent = targetRef.current.parentElement;
+      const originalParentMaxHeight = parent?.style.maxHeight;
+      const originalParentOverflow = parent?.style.overflow;
+      const originalParentHeight = parent?.style.height;
 
       if (scrollContainer) {
+        scrollContainer.style.height = 'auto';
         scrollContainer.style.maxHeight = 'none';
         scrollContainer.style.overflow = 'visible';
+        
+        // Also ensure the target itself doesn't clip
+        targetRef.current.style.height = 'auto';
+        targetRef.current.style.maxHeight = 'none';
+        targetRef.current.style.overflow = 'visible';
+
+        // Expand parent if it exists
+        if (parent) {
+          parent.style.maxHeight = 'none';
+          parent.style.height = 'auto';
+          parent.style.overflow = 'visible';
+        }
       }
 
       const dataUrl = await domToPng(targetRef.current, {
@@ -457,15 +527,28 @@ export default function App() {
       });
 
       if (scrollContainer) {
+        scrollContainer.style.height = originalHeight || '';
         scrollContainer.style.maxHeight = originalMaxHeight || '';
         scrollContainer.style.overflow = originalOverflow || '';
+        
+        // Restore target styles
+        targetRef.current.style.height = '';
+        targetRef.current.style.maxHeight = '';
+        targetRef.current.style.overflow = '';
+
+        // Restore parent styles
+        if (parent) {
+          parent.style.maxHeight = originalParentMaxHeight || '';
+          parent.style.height = originalParentHeight || '';
+          parent.style.overflow = originalParentOverflow || '';
+        }
       }
       
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `${type === 'all' ? 'Vehicle_Summary' : 'HandOver_Progress'}_${new Date().toISOString().split('T')[0]}.png`;
+      link.download = `${type === 'all' ? 'Daily_Operations_Full_Report' : 'Operations_Table'}_${new Date().toISOString().split('T')[0]}.png`;
       link.click();
-      showToast(`${type === 'all' ? 'Summary' : 'Handover progress'} captured successfully!`, 'success');
+      showToast(`${type === 'all' ? 'Full Report' : 'Table'} captured successfully!`, 'success');
     } catch (error) {
       console.error('Capture error:', error);
       showToast('Failed to capture', 'error');
@@ -521,6 +604,10 @@ export default function App() {
       const wsname = wb.SheetNames[0];
       const ws = wb.Sheets[wsname];
       const data = XLSX.utils.sheet_to_json(ws) as any[];
+      if (!Array.isArray(data)) {
+        showToast('Import failed: Invalid Excel format', 'error');
+        return;
+      }
 
       const batchId = `batch-${Date.now()}`;
       const uploadTimestamp = new Date().toISOString();
@@ -718,35 +805,52 @@ export default function App() {
 
       container.scrollTop = 0;
 
-      // Initial delay before starting to scroll
+      let animationFrameId: number;
+      let lastTime = performance.now();
+      const pixelsPerSecond = 50; 
+      let currentTranslateY = 0;
+
+      const scroll = (currentTime: number) => {
+        if (!container) return;
+
+        const deltaTime = (currentTime - lastTime) / 1000;
+        lastTime = currentTime;
+
+        const content = container.querySelector('.scroll-content') as HTMLElement;
+        if (!content) return;
+        const maxScroll = content.scrollHeight - container.clientHeight + 100;
+        
+        if (currentTranslateY >= maxScroll) {
+          // Wait at bottom before switching
+          nextRoundTimeout = setTimeout(() => {
+            if (dashboardPlanFilter === 'All' && activePlanGroups.length > 1) {
+              setCurrentRoundIndex((prev) => (prev + 1) % activePlanGroups.length);
+            } else {
+              startAutoScroll();
+            }
+          }, 5000);
+          return;
+        }
+
+        currentTranslateY += pixelsPerSecond * deltaTime;
+        content.style.transform = `translateY(-${currentTranslateY}px)`;
+        animationFrameId = requestAnimationFrame(scroll);
+      };
+
       initialDelay = setTimeout(() => {
-        scrollInterval = setInterval(() => {
-          if (!container) return;
-
-          const isAtBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight;
-
-          if (isAtBottom) {
-            clearInterval(scrollInterval);
-            // Wait at bottom before switching
-            nextRoundTimeout = setTimeout(() => {
-              if (dashboardPlanFilter === 'All' && activePlanGroups.length > 1) {
-                setCurrentRoundIndex((prev) => (prev + 1) % activePlanGroups.length);
-              } else {
-                // If only one plan or filtered, restart scroll
-                startAutoScroll();
-              }
-            }, 5000);
-          } else {
-            container.scrollTop += 1;
-          }
-        }, 40); // Slightly faster scrolling
+        lastTime = performance.now();
+        animationFrameId = requestAnimationFrame(scroll);
       }, 3000);
+
+      return () => {
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      };
     };
 
-    startAutoScroll();
+    const cleanup = startAutoScroll();
 
     return () => {
-      clearInterval(scrollInterval);
+      if (cleanup) cleanup();
       clearTimeout(nextRoundTimeout);
       clearTimeout(initialDelay);
     };
@@ -770,32 +874,46 @@ export default function App() {
       // Reset scroll
       container.scrollTop = 0;
 
-      // Wait a bit before starting to scroll
+      let animationFrameId: number;
+      let lastTime = performance.now();
+      const pixelsPerSecond = 30; // Slightly slower for readability
+
+      const scroll = (currentTime: number) => {
+        if (!container) return;
+
+        const deltaTime = (currentTime - lastTime) / 1000;
+        lastTime = currentTime;
+
+        const isAtBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight - 1;
+
+        if (isAtBottom) {
+          pauseTimeout = setTimeout(startAutoScroll, 5000);
+          return;
+        }
+
+        container.scrollTop += pixelsPerSecond * deltaTime;
+        animationFrameId = requestAnimationFrame(scroll);
+      };
+
       pauseTimeout = setTimeout(() => {
-        scrollInterval = setInterval(() => {
-          if (!container) return;
-
-          // Add a small threshold to avoid float precision issues
-          const isAtBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight - 1;
-
-          if (isAtBottom) {
-            clearInterval(scrollInterval);
-            // Wait at bottom for 5 seconds before restarting
-            pauseTimeout = setTimeout(startAutoScroll, 5000);
-          } else {
-            container.scrollTop += 1;
-          }
-        }, 50); // Slightly faster scroll
+        lastTime = performance.now();
+        animationFrameId = requestAnimationFrame(scroll);
       }, 3000);
+
+      return () => {
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      };
     };
 
-    // Small delay to ensure DOM is ready
-    startTimeout = setTimeout(startAutoScroll, 500);
+    let cleanup: (() => void) | undefined;
+    startTimeout = setTimeout(() => {
+      cleanup = startAutoScroll();
+    }, 500);
 
     return () => {
       clearTimeout(startTimeout);
       clearTimeout(pauseTimeout);
-      clearInterval(scrollInterval);
+      if (cleanup) cleanup();
     };
   }, [isFullScreenSummary]);
 
@@ -852,6 +970,15 @@ export default function App() {
     return ['All', ...Array.from(times)].sort(sortPlanLoad);
   }, [vehicles]);
 
+  const formatEfficiency = (mins: number) => {
+    if (mins >= 60) {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return `${h}h ${m}m`;
+    }
+    return `${mins}m`;
+  };
+
   const getDelayStatus = (deliveryDate: string, planLoad: string, checkIn?: string | null) => {
     if (!planLoad || !deliveryDate || !planLoad.includes(':') || !deliveryDate.includes('-')) return null;
     
@@ -874,25 +1001,84 @@ export default function App() {
     }
   };
 
+  const efficiencyMetrics = useMemo(() => {
+    const completedVehicles = vehicles.filter(v => v.status === 'Check Out' && v.checkIn && v.checkOut);
+    const avgTime = completedVehicles.length > 0 
+      ? completedVehicles.reduce((acc, v) => {
+          const start = new Date(v.checkIn!).getTime();
+          const end = new Date(v.checkOut!).getTime();
+          return acc + (end - start);
+        }, 0) / completedVehicles.length / 60000
+      : 0;
+    
+    const delayedCount = vehicles.filter(v => {
+      const status = getDelayStatus(v.deliveryDate, v.planLoad, v.checkIn);
+      return status?.status === 'Delay';
+    }).length;
+
+    const completionRate = vehicles.length > 0
+      ? Math.round((vehicles.filter(v => v.status === 'Check Out').length / vehicles.length) * 100)
+      : 0;
+
+    return { avgTime, delayedCount, completionRate };
+  }, [vehicles]);
+
   const stats = useMemo(() => {
     const total = filteredVehicles.length;
-    const waiting = filteredVehicles.filter(v => v.status === 'Waiting').length;
-    const inProgress = filteredVehicles.filter(v => v.status !== 'Waiting' && v.status !== 'Check Out').length;
-    const completed = filteredVehicles.filter(v => v.status === 'Check Out').length;
+    const statusCounts = STATUS_FLOW.reduce((acc, status) => {
+      acc[status] = filteredVehicles.filter(v => v.status === status).length;
+      return acc;
+    }, {} as Record<Status, number>);
+
     const getPercentage = (count: number) => total > 0 ? Math.round((count / total) * 100) : 0;
 
-    return [
-      { label: 'Total Vehicles', value: total, icon: Truck, color: 'text-blue-600', percentage: 100, bg: 'bg-blue-50' },
-      { label: 'Waiting', value: waiting, icon: Clock, color: 'text-blue-600', percentage: getPercentage(waiting), bg: 'bg-blue-50' },
-      { label: 'In Progress', value: inProgress, icon: RefreshCw, color: 'text-orange-600', percentage: getPercentage(inProgress), bg: 'bg-orange-50' },
-      { label: 'Completed', value: completed, icon: CheckCircle2, color: 'text-green-600', percentage: getPercentage(completed), bg: 'bg-green-50' },
-    ];
+    return {
+      total,
+      statusCounts,
+      list: [
+        {
+          label: 'TOTAL',
+          subLabel: 'ทั้งหมด',
+          value: total,
+          icon: Activity,
+          color: 'text-white',
+          bg: 'bg-slate-900',
+          solidBg: 'bg-slate-900',
+          percentage: 100
+        },
+        ...STATUS_FLOW.map(status => ({
+          label: STATUS_LABELS[status].split('\n')[1].replace('(', '').replace(')', ''),
+          subLabel: STATUS_LABELS[status].split('\n')[0],
+          value: statusCounts[status],
+          icon: getStatusIcon(status),
+          color: 'text-white',
+          bg: STATUS_COLORS[status].split(' ')[0],
+          solidBg: STATUS_SOLID_COLORS[status],
+          percentage: getPercentage(statusCounts[status])
+        }))
+      ]
+    };
   }, [filteredVehicles]);
+
+  const activities = useMemo(() => {
+    return vehicles
+      .filter(v => v.lastStatusUpdate)
+      .map(v => ({
+        vehicleNumber: v.vehicleNumber,
+        driverName: v.driverName,
+        trip: v.tripC || '',
+        sub: v.sub || '',
+        status: v.status,
+        time: new Date(v.lastStatusUpdate!).getTime(),
+        timeString: v.lastStatusUpdate!
+      }))
+      .sort((a, b) => b.time - a.time);
+  }, [vehicles]);
 
   if (!isAuthReady) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
       </div>
     );
   }
@@ -923,216 +1109,206 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 font-sans">
-      {/* Header */}
-      <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Top Row: Brand & User */}
-          <div className="py-4 flex items-center justify-between border-b border-stone-100">
-              <div className="flex items-center gap-3">
-                <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100">
-                  <LayoutDashboard size={24} />
+    <div className="min-h-screen bg-slate-50/50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+      {/* Top Activity Ticker */}
+      <RecentActivityTicker activities={activities} />
+
+      {/* Main Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 backdrop-blur-md bg-white/80">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            {/* Logo & Search */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-8 flex-1">
+              <div className="flex items-center gap-4">
+                <div className="bg-indigo-600 w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100 shrink-0">
+                  <Truck size={28} className="animate-pulse" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold tracking-tight text-stone-900">Vehicle Loading Tracker</h1>
-                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
-                    Last updated: {lastUpdated.toLocaleTimeString()}
-                  </p>
+                  <h1 className="text-2xl font-black tracking-tighter text-slate-900 leading-none">VEHICLE<span className="text-indigo-600">TRACKER</span></h1>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1.5">Logistics Intelligence</p>
                 </div>
               </div>
 
-              {/* Stats in Header */}
-              <div className="hidden lg:flex items-center gap-4 flex-1 justify-center px-8">
-                {stats.map((stat, i) => (
-                  <div key={i} className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white border border-stone-200 shadow-sm min-w-[160px]">
-                    <div className={`p-2.5 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
-                      <stat.icon size={20} />
+              {/* Status Summary in Header */}
+              <div className="hidden lg:flex items-center gap-4 ml-4 overflow-x-auto no-scrollbar max-w-[400px] xl:max-w-none">
+                {stats.list.filter(s => s.label !== 'TOTAL').map((s, i) => (
+                  <div key={i} className="flex items-center gap-2.5 group shrink-0">
+                    <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform`}>
+                      <s.icon size={18} className={STATUS_COLORS[STATUS_FLOW[i]].split(' ')[1]} />
                     </div>
-                    <div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-2xl font-black text-stone-900 leading-none">{stat.value}</span>
-                        {stat.label !== 'Total Vehicles' && (
-                          <span className="text-[10px] font-bold text-stone-400">({stat.percentage}%)</span>
-                        )}
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-lg font-black text-slate-900 leading-none">{s.value}</span>
+                        <span className="text-[9px] font-bold text-slate-400 leading-none">({s.percentage}%)</span>
                       </div>
-                      <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mt-1 leading-none">{stat.label.replace(' Vehicles', '')}</p>
+                      <div className="flex flex-col mt-0.5">
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wider leading-none truncate">{s.label}</span>
+                        <span className="text-[7px] font-bold text-slate-300 leading-none mt-0.5 truncate">{s.subLabel}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3 pr-4 border-r border-stone-200">
-                <div className="text-right hidden sm:block">
-                  <p className="text-sm font-bold text-stone-900 leading-none">{user.displayName}</p>
-                  <p className="text-[10px] text-stone-400 mt-1">{user.email}</p>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 font-bold text-xs border border-stone-200">
-                  {user.displayName?.charAt(0)}
-                </div>
-                <button 
-                  onClick={handleLogout}
-                  className="p-2 text-stone-400 hover:text-red-600 transition-colors"
-                  title="Logout"
-                >
-                  <LogOut size={18} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Row: Filters & Actions */}
-          <div className="py-3 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-            <div className="flex flex-col md:flex-row md:items-center gap-3 flex-1">
-              {/* Search */}
-              <div className="relative w-full md:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
-                <input 
-                  type="text" 
-                  placeholder="Search driver/vehicle..." 
-                  className="pl-9 pr-4 py-2 bg-stone-50 border border-stone-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 rounded-xl text-sm transition-all w-full"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-              {/* Filter Group */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1.5 bg-stone-50 border border-stone-200 px-2 py-1 rounded-xl">
-                  <span className="text-[9px] font-black text-stone-400 uppercase tracking-tighter border-r border-stone-200 pr-1.5 mr-0.5">SUB</span>
-                  <Filter size={14} className="text-stone-400" />
-                  <select 
-                    className="bg-transparent border-none text-[11px] font-bold focus:ring-0 pr-7 py-0.5"
-                    value={subFilter}
-                    onChange={(e) => setSubFilter(e.target.value)}
-                  >
-                    {subOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-1.5 bg-stone-50 border border-stone-200 px-2 py-1 rounded-xl">
-                  <span className="text-[9px] font-black text-stone-400 uppercase tracking-tighter border-r border-stone-200 pr-1.5 mr-0.5">Date</span>
-                  <Calendar size={14} className="text-stone-400" />
-                  <select 
-                    className="bg-transparent border-none text-[11px] font-bold focus:ring-0 pr-7 py-0.5"
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
-                  >
-                    {dateOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-1.5 bg-stone-50 border border-stone-200 px-2 py-1 rounded-xl">
-                  <span className="text-[9px] font-black text-stone-400 uppercase tracking-tighter border-r border-stone-200 pr-1.5 mr-0.5">Time</span>
-                  <Clock size={14} className="text-stone-400" />
-                  <select 
-                    className="bg-transparent border-none text-[11px] font-bold focus:ring-0 pr-7 py-0.5"
-                    value={timeFilter}
-                    onChange={(e) => setTimeFilter(e.target.value)}
-                  >
-                    <option value="All">All Time</option>
-                    {timeOptions.filter(t => t !== 'All').map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-1.5 bg-stone-50 border border-stone-200 px-2 py-1 rounded-xl">
-                  <span className="text-[9px] font-black text-stone-400 uppercase tracking-tighter border-r border-stone-200 pr-1.5 mr-0.5">Status</span>
-                  <CheckCircle2 size={14} className="text-stone-400" />
-                  <select 
-                    className="bg-transparent border-none text-[11px] font-bold focus:ring-0 pr-7 py-0.5"
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                  >
-                    <option value="All">All Status</option>
-                    {STATUS_FLOW.map(status => (
-                      <option key={status} value={status}>{STATUS_LABELS[status]}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
             </div>
 
-            {/* Actions Group */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 xl:pb-0 no-scrollbar">
-              <div className="flex items-center bg-stone-100 p-1 rounded-xl gap-1">
+            {/* User & Global Actions */}
+            <div className="flex items-center gap-4 self-end lg:self-auto">
+              <div className="flex items-center bg-slate-100 p-1.5 rounded-2xl">
                 <button
                   onClick={() => setShowSummary(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold hover:bg-white hover:shadow-sm transition-all whitespace-nowrap"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-white hover:shadow-sm transition-all text-slate-700 whitespace-nowrap"
                 >
-                  <BarChart3 size={14} />
+                  <BarChart3 size={16} className="text-indigo-600" />
                   Summary
-                </button>
-                <button
-                  onClick={() => setShowHistory(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold hover:bg-white hover:shadow-sm transition-all whitespace-nowrap"
-                >
-                  <History size={14} />
-                  History
                 </button>
               </div>
 
-              <div className="h-6 w-px bg-stone-200 mx-1" />
+              <div className="h-10 w-px bg-slate-200 mx-1 hidden lg:block" />
 
-              <button
-                onClick={() => {
-                  const subs = subOptions.filter(opt => opt !== 'All');
-                  const times = timeOptions.filter(opt => opt !== 'All');
-                  setNewVehicle({
-                    ...newVehicle,
-                    deliveryDate: new Date().toISOString().split('T')[0],
-                    sub: subs.length > 0 ? subs[0] : 'Other',
-                    planLoad: times.length > 0 ? times[0] : '18:30',
-                    vehiclePlan: times.length > 0 ? times[0] : '18:30',
-                    vehicleNumber: '',
-                    driverName: '',
-                    driverPhone: ''
-                  });
-                  setShowAddModal(true);
-                }}
-                className="flex items-center gap-1.5 bg-stone-900 text-white px-3 py-2 rounded-xl text-[11px] font-bold hover:bg-stone-800 transition-colors whitespace-nowrap"
-              >
-                <Plus size={14} />
-                Add
-              </button>
-
-              <label className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-2 rounded-xl text-[11px] font-bold hover:bg-indigo-700 transition-colors cursor-pointer whitespace-nowrap">
-                <FileUp size={14} />
-                Import
-                <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleImportExcel} />
-              </label>
-
-              <button
-                onClick={() => handleExportExcel(filteredVehicles, 'Vehicle_Tracker_Export')}
-                className="flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-2 rounded-xl text-[11px] font-bold hover:bg-emerald-700 transition-colors whitespace-nowrap"
-              >
-                <FileDown size={14} />
-                Export
-              </button>
-
-              <button
-                onClick={() => setShowArchiveHistory(true)}
-                className="p-2 text-stone-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                title="View Archive History"
-              >
-                <History size={18} />
-              </button>
-
-              <button
-                onClick={handleArchiveAll}
-                className="p-2 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
-                title="Archive all data"
-              >
-                <Archive size={16} />
-              </button>
+              {user ? (
+                <div className="flex items-center gap-4 pl-2">
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs font-bold text-slate-900 leading-none">{user.displayName}</p>
+                    <p className="text-[10px] text-slate-400 font-medium mt-1.5">{user.email}</p>
+                  </div>
+                  <div className="relative">
+                    <div className="w-11 h-11 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-indigo-100 border-2 border-white">
+                      {user.displayName?.charAt(0)}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full" />
+                  </div>
+                  <button
+                    onClick={() => signOut(auth)}
+                    className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all border border-transparent hover:border-red-100"
+                    title="Sign Out"
+                  >
+                    <LogOut size={20} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => signInWithPopup(auth, new GoogleAuthProvider())}
+                  className="flex items-center gap-3 bg-indigo-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100"
+                >
+                  <LogIn size={18} />
+                  Sign In
+                </button>
+              )}
             </div>
           </div>
         </div>
       </header>
 
-      {/* Edit Driver Modal */}
+      {/* Controls Bar */}
+      <div className="bg-slate-50 border-b border-slate-200 sticky top-[89px] z-20">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative min-w-[140px]">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                <select
+                  value={subFilter}
+                  onChange={(e) => setSubFilter(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all"
+                >
+                  {subOptions.map(opt => <option key={opt} value={opt}>{opt === 'All' ? 'All Subs' : opt}</option>)}
+                </select>
+              </div>
+
+              <div className="relative min-w-[140px]">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                <select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all"
+                >
+                  {dateOptions.map(opt => <option key={opt} value={opt}>{opt === 'All' ? 'All Dates' : opt}</option>)}
+                </select>
+              </div>
+
+              <div className="relative min-w-[140px]">
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                <select
+                  value={timeFilter}
+                  onChange={(e) => setTimeFilter(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all"
+                >
+                  {timeOptions.map(opt => <option key={opt} value={opt}>{opt === 'All' ? 'All Times' : opt}</option>)}
+                </select>
+              </div>
+
+              <div className="relative min-w-[140px]">
+                <Activity className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all"
+                >
+                  <option value="All">All Status</option>
+                  {STATUS_FLOW.map(status => <option key={status} value={status}>{STATUS_LABELS[status].replace('\n', ' ')}</option>)}
+                </select>
+              </div>
+
+              <div className="relative flex-1 lg:max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+              >
+                <Plus size={16} />
+                Add Vehicle
+              </button>
+              
+              <div className="h-6 w-px bg-slate-200 mx-1" />
+
+              <div className="flex items-center gap-2">
+                <label className="cursor-pointer flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all">
+                  <FileUp size={16} className="text-slate-400" />
+                  Import
+                  <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleImportExcel} />
+                </label>
+                <button
+                  onClick={() => handleExportExcel(filteredVehicles, 'Vehicle_Export')}
+                  className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all"
+                >
+                  <FileDown size={16} className="text-slate-400" />
+                  Export
+                </button>
+                <button
+                  onClick={() => setShowHistory(true)}
+                  className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all"
+                >
+                  <History size={16} className="text-slate-400" />
+                  History
+                </button>
+                <button
+                  onClick={() => setShowArchiveHistory(true)}
+                  className="flex items-center gap-2 bg-white border border-slate-200 text-red-500 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-red-50 hover:border-red-100 transition-all"
+                >
+                  <Archive size={16} />
+                  Archive
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      {/* Modals */}
       <AnimatePresence>
         {editingVehicle && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -1331,54 +1507,60 @@ export default function App() {
         )}
 
         {showSummary && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[2.5rem] shadow-2xl max-w-2xl w-full overflow-hidden border border-stone-200"
+              className="bg-white rounded-[2.5rem] shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]"
             >
-              <div ref={summaryRef} className="bg-white rounded-[2.5rem] overflow-hidden">
+              <div ref={summaryRef} className="bg-white flex flex-col flex-1 overflow-hidden">
                 {/* Header */}
-                <div className="p-8 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-indigo-600 w-12 h-12 rounded-2xl text-white flex items-center justify-center shadow-lg shadow-indigo-100">
-                      <LayoutDashboard size={24} />
+                <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                  <div className="flex items-center gap-5">
+                    <div className="bg-indigo-600 w-14 h-14 rounded-2xl text-white flex items-center justify-center shadow-xl shadow-indigo-100">
+                      <BarChart3 size={28} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-stone-900 tracking-tight">Quick Summary</h2>
+                      <h2 className="text-2xl font-black text-slate-900 tracking-tight">Daily Operations Report</h2>
                       {(() => {
                         const latestDate = vehicles.length > 0 
                           ? [...new Set(vehicles.map(v => v.deliveryDate))].sort((a, b) => new Date(b as string).getTime() - new Date(a as string).getTime())[0]
                           : 'No Data';
                         return (
-                          <p className="text-xs font-bold text-stone-400 uppercase tracking-widest flex items-center gap-2 mt-0.5">
-                            <Calendar size={12} />
-                            Plan Date: {latestDate}
-                          </p>
+                          <div className="flex items-center gap-4 mt-1">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                              <Calendar size={14} className="text-indigo-500" />
+                              {latestDate}
+                            </p>
+                            <div className="h-3 w-px bg-slate-200" />
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                              <Clock size={14} className="text-indigo-500" />
+                              {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
                         );
                       })()}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <button 
                       onClick={() => setIsFullScreenSummary(true)} 
-                      className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
-                      title="Open Full Dashboard"
+                      className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-95"
                     >
                       <Monitor size={16} />
                       Dashboard Mode
                     </button>
                     <button 
                       onClick={() => setShowSummary(false)} 
-                      className="w-10 h-10 flex items-center justify-center hover:bg-stone-200 rounded-full transition-all text-stone-400 hover:text-stone-900"
+                      className="w-12 h-12 flex items-center justify-center hover:bg-slate-100 rounded-2xl transition-all text-slate-400 hover:text-slate-900 border border-slate-200"
                     >
-                      <X size={20} />
+                      <X size={24} />
                     </button>
                   </div>
                 </div>
-                
-                <div className="p-8 space-y-10 bg-white max-h-[70vh] overflow-y-auto custom-scrollbar">
+
+                <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1">
                   {(() => {
                     const latestDate = vehicles.length > 0 
                       ? [...new Set(vehicles.map(v => v.deliveryDate))].sort((a, b) => new Date(b as string).getTime() - new Date(a as string).getTime())[0]
@@ -1387,214 +1569,216 @@ export default function App() {
                     const latestVehicles = latestDate 
                       ? vehicles.filter(v => v.deliveryDate === latestDate)
                       : [];
-
+                    
                     const total = latestVehicles.length;
                     const completed = latestVehicles.filter(v => v.status === 'Check Out').length;
-                    const inProgress = latestVehicles.filter(v => v.status !== 'Waiting' && v.status !== 'Check Out').length;
-                    const waiting = latestVehicles.filter(v => v.status === 'Waiting').length;
                     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
                     return (
                       <>
-                        {/* Key Stats */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                          {[
-                            { label: 'Total', value: total, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                            { label: 'Waiting', value: waiting, color: 'text-stone-400', bg: 'bg-stone-50' },
-                            { label: 'In Progress', value: inProgress, color: 'text-amber-600', bg: 'bg-amber-50' },
-                            { label: 'Completed', value: completed, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                          ].map((s, i) => (
-                            <div key={i} className={`${s.bg} p-6 rounded-[2rem] text-center transition-transform hover:scale-[1.02]`}>
-                              <p className={`text-3xl font-black ${s.color} mb-1`}>{s.value}</p>
-                              <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">{s.label}</p>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Progress Visual */}
-                        <div className="space-y-6">
-                          <div className="flex items-end justify-between">
-                            <div>
-                              <h3 className="text-sm font-bold text-stone-400 uppercase tracking-widest mb-1">Overall Progress</h3>
-                              <p className="text-5xl font-black text-stone-900 tracking-tighter">{completionRate}%</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-bold text-stone-400 uppercase tracking-widest mb-1">Status</p>
-                              <p className={`text-sm font-bold px-3 py-1 rounded-full ${completionRate === 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}`}>
-                                {completionRate === 100 ? 'All Completed' : 'In Operation'}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="h-4 w-full bg-stone-100 rounded-full overflow-hidden flex shadow-inner">
-                            {STATUS_FLOW.map(status => {
-                              const count = latestVehicles.filter(v => v.status === status).length;
-                              const percentage = total > 0 ? (count / total) * 100 : 0;
-                              return (
-                                <motion.div 
-                                  key={status}
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${percentage}%` }}
-                                  transition={{ duration: 1, ease: "easeOut" }}
-                                  style={{ backgroundColor: STATUS_HEX_COLORS[status] }}
-                                  className="h-full"
-                                  title={`${STATUS_LABELS[status]}: ${count}`}
-                                />
-                              );
-                            })}
-                          </div>
-
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-6">
-                            {STATUS_FLOW.map(status => {
-                              const count = latestVehicles.filter(v => v.status === status).length;
-                              return (
-                                <div key={status} className="flex items-center justify-between text-xs border-b border-stone-50 pb-2">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                          {/* Left: Progress & Efficiency */}
+                          <div className="space-y-8">
+                            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex items-center gap-8">
+                              <div className="relative w-32 h-32 shrink-0">
+                                <svg className="w-full h-full" viewBox="0 0 36 36">
+                                  <path
+                                    className="text-slate-100 stroke-current"
+                                    strokeWidth="4"
+                                    fill="none"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                  />
+                                  <motion.path
+                                    initial={{ strokeDasharray: "0, 100" }}
+                                    animate={{ strokeDasharray: `${completionRate}, 100` }}
+                                    transition={{ duration: 1.5, ease: "easeOut" }}
+                                    className="text-indigo-600 stroke-current"
+                                    strokeWidth="4"
+                                    strokeLinecap="round"
+                                    fill="none"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                  />
+                                </svg>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                  <span className="text-2xl font-black text-slate-900">{completionRate}%</span>
+                                </div>
+                              </div>
+                              <div>
+                                <h3 className="text-lg font-black text-slate-900 mb-1">Overall Progress</h3>
+                                <p className="text-sm text-slate-500 font-medium">Daily completion rate for all scheduled vehicles.</p>
+                                <div className="flex items-center gap-4 mt-4">
                                   <div className="flex items-center gap-2">
-                                    <div 
-                                      className="w-2.5 h-2.5 rounded-full" 
-                                      style={{ backgroundColor: STATUS_HEX_COLORS[status] }}
-                                    />
-                                    <span className="font-bold text-stone-500 whitespace-pre-line">{STATUS_LABELS[status]}</span>
+                                    <div className="w-3 h-3 rounded-full bg-indigo-600" />
+                                    <span className="text-xs font-bold text-slate-600">Done</span>
                                   </div>
-                                  <span className="font-black text-stone-900">{count}</span>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-slate-200" />
+                                    <span className="text-xs font-bold text-slate-600">Remaining</span>
+                                  </div>
                                 </div>
-                              );
-                            })}
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-xl shadow-slate-200">
+                              <div className="flex items-center justify-between mb-8">
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Efficiency Metrics</h3>
+                                <BarChart3 size={16} className="text-indigo-400" />
+                              </div>
+                              {(() => {
+                                const completedVehicles = latestVehicles.filter(v => v.status === 'Check Out');
+                                const avgTime = completedVehicles.length > 0 
+                                  ? (completedVehicles.reduce((acc, v) => {
+                                      const [h, m] = (v.totalTime || '0h 0m').split(' ').map(s => parseInt(s));
+                                      return acc + (h * 60 + (m || 0));
+                                    }, 0) / completedVehicles.length).toFixed(0)
+                                  : 0;
+                                
+                                return (
+                                  <div className="grid grid-cols-2 gap-8">
+                                    <div>
+                                      <p className="text-4xl font-black text-white">{formatEfficiency(parseInt(avgTime as string))}</p>
+                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Avg. Processing / Vehicle</p>
+                                    </div>
+                                    <div className="space-y-4">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-slate-400">On Time</span>
+                                        <span className="text-xs font-black text-emerald-400">
+                                          {latestVehicles.filter(v => v.status !== 'Waiting' && getDelayStatus(v.deliveryDate, v.planLoad, v.checkIn)?.status === 'On Time').length}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-slate-400">Delayed</span>
+                                        <span className="text-xs font-black text-red-400">
+                                          {latestVehicles.filter(v => v.status !== 'Waiting' && getDelayStatus(v.deliveryDate, v.planLoad, v.checkIn)?.status === 'Delay').length}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Right: Status Breakdown */}
+                          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Hand Over Progress by Status</h3>
+                            <div className="space-y-5">
+                              {STATUS_FLOW.map(status => {
+                                const count = latestVehicles.filter(v => v.status === status).length;
+                                const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+                                return (
+                                  <div key={status} className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-lg ${STATUS_SOLID_COLORS[status]} text-white flex items-center justify-center shadow-sm`}>
+                                          {status === 'Waiting' ? <Clock size={14} /> : 
+                                           status === 'Check In' ? <Truck size={14} /> :
+                                           status === 'Invoice Receiving' ? <FileDown size={14} /> :
+                                           status === 'Checking' ? <Search size={14} /> :
+                                           status === 'Handover' ? <Package size={14} /> : <CheckCircle2 size={14} />}
+                                        </div>
+                                        <div className="flex flex-col">
+                                          <span className="text-xs font-black text-slate-700 leading-tight">{STATUS_LABELS[status].split('\n')[1].replace('(', '').replace(')', '')}</span>
+                                          <span className="text-[10px] font-bold text-slate-400 leading-tight">{STATUS_LABELS[status].split('\n')[0]}</span>
+                                        </div>
+                                      </div>
+                                      <span className="text-xs font-black text-slate-900">{count} <span className="text-slate-400 font-bold ml-1">({percentage}%)</span></span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                      <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${percentage}%` }}
+                                        className={`h-full ${STATUS_SOLID_COLORS[status]}`} 
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
 
-                        {/* Efficiency */}
-                        <div className="bg-stone-900 rounded-[2rem] p-8 text-white relative overflow-hidden">
-                          <div className="absolute top-0 right-0 p-8 opacity-10">
-                            <Clock size={80} />
+                        {/* Bottom: Handover Progress Table */}
+                        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden" ref={handOverRef}>
+                          <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hand Over Progress by Plan</h3>
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Completed</span>
+                            </div>
                           </div>
-                          <div className="relative z-10">
-                            <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4">Efficiency Metrics</h3>
-                            {(() => {
-                              const completedVehicles = latestVehicles.filter(v => v.status === 'Check Out');
-                              const avgTime = completedVehicles.length > 0 
-                                ? (completedVehicles.reduce((acc, v) => {
-                                    const [h, m] = (v.totalTime || '0h 0m').split(' ').map(s => parseInt(s));
-                                    return acc + (h * 60 + (m || 0));
-                                  }, 0) / completedVehicles.length).toFixed(0)
-                                : 0;
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                              <thead>
+                                <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                  <th className="pb-4 px-2">Plan Load</th>
+                                  {STATUS_FLOW.map(status => (
+                                    <th key={status} className="pb-4 px-2 text-center">{STATUS_LABELS[status].split('\n')[0]}</th>
+                                  ))}
+                                  <th className="pb-4 px-2 text-center bg-slate-50 rounded-t-xl">Total</th>
+                                  <th className="pb-4 px-2 text-right">Progress</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-50">
+                                {(() => {
+                                  const planGroups = [...new Set(latestVehicles.map(v => v.planLoad))].sort(sortPlanLoad);
+                                  const totalsByStatus = STATUS_FLOW.reduce((acc, s) => ({ ...acc, [s]: 0 }), {} as Record<Status, number>);
+                                  let grandTotal = 0;
 
-                              return (
-                                <div className="grid grid-cols-4 gap-4">
-                                  <div className="border-r border-white/10 pr-4">
-                                    <p className="text-4xl font-black text-white">{avgTime}</p>
-                                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Avg Mins / Vehicle</p>
-                                  </div>
-                                  <div className="border-r border-white/10 pr-4">
-                                    <p className="text-4xl font-black text-white">{completedVehicles.length}</p>
-                                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Total Handled</p>
-                                  </div>
-                                  <div className="border-r border-white/10 pr-4">
-                                    <p className="text-4xl font-black text-emerald-400">
-                                      {latestVehicles.filter(v => v.status !== 'Waiting' && getDelayStatus(v.deliveryDate, v.planLoad, v.checkIn)?.status === 'On Time').length}
-                                    </p>
-                                    <p className="text-[10px] font-bold text-emerald-400/70 uppercase tracking-widest">On Time</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-4xl font-black text-red-400">
-                                      {latestVehicles.filter(v => v.status !== 'Waiting' && getDelayStatus(v.deliveryDate, v.planLoad, v.checkIn)?.status === 'Delay').length}
-                                    </p>
-                                    <p className="text-[10px] font-bold text-red-400/70 uppercase tracking-widest">Delayed</p>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        </div>
+                                  const rows = planGroups.map(plan => {
+                                    const roundVehicles = latestVehicles.filter(v => v.planLoad === plan);
+                                    const rowTotal = roundVehicles.length;
+                                    grandTotal += rowTotal;
+                                    
+                                    const statusCounts = STATUS_FLOW.reduce((acc, s) => {
+                                      const count = roundVehicles.filter(v => v.status === s).length;
+                                      acc[s] = count;
+                                      totalsByStatus[s] += count;
+                                      return acc;
+                                    }, {} as Record<Status, number>);
 
-                        {/* Hand Over Progress Table */}
-                        <div className="space-y-4 bg-white p-1" ref={handOverRef}>
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest">Hand Over Progress</h3>
-                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest flex items-center gap-1.5">
-                              <Calendar size={10} />
-                              Plan Date: {latestDate}
-                            </p>
-                          </div>
-                          <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-xs border-collapse">
-                                <thead>
-                                  <tr className="bg-stone-900 text-white">
-                                    <th className="p-3 font-bold text-center uppercase tracking-widest border-r border-stone-800">Plan</th>
-                                    <th className="p-3 font-bold text-center uppercase tracking-widest border-r border-stone-800">Total Trips</th>
-                                    <th className="p-3 font-bold text-center uppercase tracking-widest border-r border-stone-800 bg-orange-500">Check-in</th>
-                                    <th className="p-3 font-bold text-center uppercase tracking-widest border-r border-stone-800 bg-amber-700/50">Handover</th>
-                                    <th className="p-3 font-bold text-center uppercase tracking-widest border-r border-stone-800 bg-emerald-700/50">Check-Out</th>
-                                    <th className="p-3 font-bold text-center uppercase tracking-widest">% Percentage</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {(() => {
-                                    const planGroups = [...new Set(latestVehicles.map(v => v.planLoad))].sort(sortPlanLoad);
-                                    const progress = planGroups.map(plan => {
-                                      const roundVehicles = latestVehicles.filter(v => v.planLoad === plan);
-                                      const trips = roundVehicles.length;
-                                      const checkIn = roundVehicles.filter(v => v.status !== 'Waiting').length;
-                                      const completed = roundVehicles.filter(v => v.status === 'Check Out').length;
-                                      const startHandover = checkIn - completed;
-                                      const percentage = trips > 0 ? (completed / trips) * 100 : 0;
-                                      return { plan, trips, checkIn, startHandover, completed, percentage };
-                                    });
+                                    const completed = roundVehicles.filter(v => v.status === 'Check Out').length;
+                                    const percentage = rowTotal > 0 ? (completed / rowTotal) * 100 : 0;
 
                                     return (
-                                      <>
-                                        {progress.map((row, idx) => (
-                                          <tr key={idx} className="font-bold text-stone-900 border-b border-stone-50 hover:bg-stone-50/50 transition-colors">
-                                            <td className="p-3 border-r border-stone-50 text-center bg-stone-50/30">{row.plan}</td>
-                                            <td className="p-3 border-r border-stone-50 text-center">{row.trips}</td>
-                                            <td className="p-3 border-r border-stone-50 text-center text-orange-600 bg-orange-50/10">{row.checkIn}</td>
-                                            <td className="p-3 border-r border-stone-50 text-center text-amber-600 bg-amber-50/10">{row.startHandover}</td>
-                                            <td className="p-3 border-r border-stone-50 text-center text-emerald-600 bg-emerald-50/10">{row.completed}</td>
-                                            <td className={`p-3 text-center ${
-                                              row.percentage === 100 ? 'text-emerald-600' : 
-                                              row.percentage > 0 ? 'text-amber-600' : 'text-red-600'
-                                            }`}>
-                                              <div className="flex items-center justify-center gap-2">
-                                                <div className="w-12 h-1.5 bg-stone-100 rounded-full overflow-hidden hidden sm:block">
-                                                  <div 
-                                                    className={`h-full rounded-full ${row.percentage === 100 ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                                                    style={{ width: `${row.percentage}%` }}
-                                                  />
-                                                </div>
-                                                <span>{row.percentage.toFixed(2)}%</span>
-                                              </div>
-                                            </td>
-                                          </tr>
+                                      <tr key={plan} className="group hover:bg-slate-50/50 transition-colors">
+                                        <td className="py-4 px-2 font-black text-slate-900">{plan}</td>
+                                        {STATUS_FLOW.map(status => (
+                                          <td key={status} className={`py-4 px-2 text-center font-bold ${status === 'Check Out' ? 'text-emerald-600' : 'text-slate-500'}`}>
+                                            {statusCounts[status] || '-'}
+                                          </td>
                                         ))}
-                                        <tr className="bg-stone-900 text-white font-bold">
-                                          <td className="p-3 border-r border-stone-800 text-center">Total</td>
-                                          <td className="p-3 border-r border-stone-800 text-center">
-                                            {progress.reduce((acc, curr) => acc + curr.trips, 0)}
-                                          </td>
-                                          <td className="p-3 border-r border-stone-800 text-center bg-orange-500">
-                                            {progress.reduce((acc, curr) => acc + curr.checkIn, 0)}
-                                          </td>
-                                          <td className="p-3 border-r border-stone-800 text-center bg-amber-700/50">
-                                            {progress.reduce((acc, curr) => acc + curr.startHandover, 0)}
-                                          </td>
-                                          <td className="p-3 border-r border-stone-800 text-center bg-emerald-700/50">
-                                            {progress.reduce((acc, curr) => acc + curr.completed, 0)}
-                                          </td>
-                                          <td className="p-3 text-center bg-stone-900">
-                                            {(() => {
-                                              const totalTrips = progress.reduce((acc, curr) => acc + curr.trips, 0);
-                                              const totalCompleted = progress.reduce((acc, curr) => acc + curr.completed, 0);
-                                              return totalTrips > 0 ? ((totalCompleted / totalTrips) * 100).toFixed(2) : '0.00';
-                                            })()}%
-                                          </td>
-                                        </tr>
-                                      </>
+                                        <td className="py-4 px-2 text-center font-black text-slate-900 bg-slate-50/50">{rowTotal}</td>
+                                        <td className="py-4 px-2 text-right">
+                                          <div className="flex items-center justify-end gap-3">
+                                            <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                              <div className={`h-full ${percentage === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: `${percentage}%` }} />
+                                            </div>
+                                            <span className={`text-[10px] font-black w-8 text-right ${percentage === 100 ? 'text-emerald-600' : 'text-slate-900'}`}>{percentage.toFixed(0)}%</span>
+                                          </div>
+                                        </td>
+                                      </tr>
                                     );
-                                  })()}
-                                </tbody>
-                              </table>
-                            </div>
+                                  });
+
+                                  return (
+                                    <>
+                                      {rows}
+                                      <tr className="bg-slate-900 text-white font-black">
+                                        <td className="py-4 px-4 rounded-l-2xl">TOTAL</td>
+                                        {STATUS_FLOW.map(status => (
+                                          <td key={status} className="py-4 px-2 text-center">{totalsByStatus[status]}</td>
+                                        ))}
+                                        <td className="py-4 px-2 text-center text-indigo-400">{grandTotal}</td>
+                                        <td className="py-4 px-4 text-right rounded-r-2xl">
+                                          {grandTotal > 0 ? ((totalsByStatus['Check Out'] / grandTotal) * 100).toFixed(0) : 0}%
+                                        </td>
+                                      </tr>
+                                    </>
+                                  );
+                                })()}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
                       </>
@@ -1603,28 +1787,28 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="p-8 bg-stone-50/50 border-t border-stone-100 flex flex-col sm:flex-row gap-4 justify-between items-center">
+              <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-center shrink-0">
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <button 
                     onClick={() => handleCaptureSummary('all')}
-                    className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-4 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 active:scale-95 text-sm"
+                    className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 active:scale-95 text-sm"
                   >
                     <Camera size={18} />
-                    Capture: Overall
+                    Capture: Full Report
                   </button>
                   <button 
                     onClick={() => handleCaptureSummary('handover')}
-                    className="flex items-center justify-center gap-2 bg-stone-900 text-white px-6 py-4 rounded-2xl font-bold hover:bg-stone-800 transition-all shadow-xl shadow-stone-200 active:scale-95 text-sm"
+                    className="flex items-center justify-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95 text-sm"
                   >
                     <Table size={18} />
-                    Capture: Hand Over Progress
+                    Capture: Table Only
                   </button>
                 </div>
                 <button 
                   onClick={() => setShowSummary(false)}
-                  className="w-full sm:w-auto bg-white border border-stone-200 text-stone-600 px-10 py-4 rounded-2xl font-bold hover:bg-stone-50 transition-all active:scale-95 text-sm"
+                  className="w-full sm:w-auto bg-white border border-slate-200 text-slate-600 px-10 py-4 rounded-2xl font-black hover:bg-slate-50 transition-all active:scale-95 text-sm"
                 >
-                  Close Report
+                  Close
                 </button>
               </div>
             </motion.div>
@@ -1642,7 +1826,7 @@ export default function App() {
               <div className="p-6 border-b border-stone-100 flex items-center justify-between bg-stone-50">
                 <div className="flex items-center gap-3">
                   <div className="bg-stone-900 p-2 rounded-lg text-white">
-                    <RefreshCw size={20} />
+                    <RotateCcw size={20} />
                   </div>
                   <h2 className="text-xl font-bold">Upload History</h2>
                 </div>
@@ -1700,217 +1884,205 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          {/* Vehicle List */}
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-stone-50 border-bottom border-stone-200">
-                  <th className="px-6 py-4 text-xs font-semibold text-stone-500 uppercase tracking-wider text-center">Queue</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-stone-500 uppercase tracking-wider min-w-[140px]">Plan & SUB</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-stone-500 uppercase tracking-wider">Vehicle & Driver</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-stone-500 uppercase tracking-wider">Status & Progress</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-stone-500 uppercase tracking-wider min-w-[120px]">Timestamps</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-stone-500 uppercase tracking-wider text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {loading ? (
-                  [...Array(5)].map((_, i) => (
-                    <tr key={i}>
-                      <td className="px-6 py-4 text-center"><Skeleton className="w-8 h-8 rounded-full mx-auto" /></td>
-                      <td className="px-6 py-4"><div className="space-y-2"><Skeleton className="w-24 h-4" /><Skeleton className="w-32 h-4" /><Skeleton className="w-16 h-4" /></div></td>
-                      <td className="px-6 py-4"><div className="flex items-center gap-3"><Skeleton className="w-10 h-10 rounded-full" /><div className="space-y-2"><Skeleton className="w-32 h-5" /><Skeleton className="w-24 h-3" /><Skeleton className="w-24 h-3" /></div></div></td>
-                      <td className="px-6 py-4"><div className="space-y-2"><div className="flex justify-between"><Skeleton className="w-20 h-10 rounded-2xl" /><Skeleton className="w-10 h-6" /></div><Skeleton className="w-full h-1.5 rounded-full" /></div></td>
-                      <td className="px-6 py-4"><div className="space-y-2"><Skeleton className="w-24 h-4" /><Skeleton className="w-24 h-4" /><Skeleton className="w-24 h-4" /></div></td>
-                      <td className="px-6 py-4 text-right"><Skeleton className="w-24 h-10 rounded-2xl ml-auto" /></td>
-                    </tr>
-                  ))
-                ) : (
-                  <AnimatePresence mode="popLayout">
-                    {filteredVehicles.map((vehicle) => (
-                      <motion.tr 
-                        key={vehicle.id}
-                        layout
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="hover:bg-stone-50/50 transition-colors"
-                      >
-                        <td className="px-6 py-4 text-center">
-                          {vehicleQueues[vehicle.id] ? (
-                            <div className="inline-flex flex-col items-center justify-center min-w-[90px] p-3 rounded-2xl border-2 border-indigo-200 bg-white shadow-md">
-                              <span className="text-base font-black text-indigo-600 mb-2">{vehicle.planLoad}</span>
-                              <div className={`flex items-center justify-center w-10 h-10 rounded-full ${STATUS_SOLID_COLORS[vehicle.status]} text-white font-black text-xl shadow-inner transition-colors duration-300`}>
-                                {vehicleQueues[vehicle.id]}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-stone-300 font-mono text-xs">-</span>
-                          )}
-                        </td>
-                                        <td className="px-6 py-4 min-w-[140px]">
-                          <div className="space-y-1.5">
-                            <p className="text-sm font-bold text-indigo-600">{vehicle.deliveryDate}</p>
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium text-stone-700">Plan: {vehicle.planLoad}</p>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-black text-stone-400 uppercase tracking-tighter">SUB</span>
-                              <span className="inline-block px-2.5 py-1 rounded-md border border-indigo-200 bg-indigo-50 text-indigo-700 text-sm font-bold uppercase tracking-wider">
-                                {vehicle.sub}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 min-w-[220px]">
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
-                              <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                <Truck size={20} />
-                              </div>
-                              {vehicleQueues[vehicle.id] && (
-                                <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full ${STATUS_SOLID_COLORS[vehicle.status]} text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-sm transition-colors duration-300`}>
-                                  {vehicleQueues[vehicle.id]}
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-lg font-bold text-stone-900">{vehicle.vehicleNumber}</p>
-                              <div className="flex items-center gap-1 text-sm text-stone-500">
-                                <User size={12} />
-                                <span>{vehicle.driverName}</span>
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-stone-500">
-                                <Phone size={12} />
-                                <span>{vehicle.driverPhone}</span>
-                              </div>
-                              {vehicle.tripC && (
-                                <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-500 uppercase tracking-tight mt-0.5">
-                                  <Hash size={10} />
-                                  <span>Trip C: {vehicle.tripC}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="space-y-2 min-w-[160px]">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider whitespace-pre-line text-left flex flex-col items-start justify-center ${STATUS_COLORS[vehicle.status]}`}>
-                                {STATUS_LABELS[vehicle.status]}
-                              </span>
-                              <span className="text-base font-bold text-stone-600">{vehicle.percentage}%</span>
-                            </div>
-                            
-                            <div className="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden">
-                              <motion.div 
-                                initial={{ width: 0 }}
-                                animate={{ width: `${vehicle.percentage}%` }}
-                                className={`h-full rounded-full ${
-                                  vehicle.percentage === 100 ? 'bg-emerald-500' : 
-                                  vehicle.percentage > 0 ? 'bg-indigo-500' : 'bg-stone-300'
-                                }`}
-                              />
-                            </div>
-
-                            {(() => {
-                              const delayStatus = getDelayStatus(vehicle.deliveryDate, vehicle.planLoad, vehicle.checkIn);
-                              if (!delayStatus) return null;
-                              return delayStatus.status === 'Delay' ? (
-                                <span className="px-2 py-1 rounded-md text-[10px] font-bold bg-red-100 text-red-600 whitespace-nowrap w-fit">
-                                  DELAY {delayStatus.mins}m
-                                </span>
-                              ) : (
-                                <span className="px-2 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-600 whitespace-nowrap w-fit">
-                                  ON TIME
-                                </span>
-                              );
-                            })()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 min-w-[120px]">
-                          <div className="text-xs space-y-1 font-mono text-stone-500 whitespace-nowrap">
-                            {vehicle.checkIn && <p>CIN: {new Date(vehicle.checkIn).toLocaleTimeString()}</p>}
-                            {vehicle.invoiceReceiving && <p>DOC: {new Date(vehicle.invoiceReceiving).toLocaleTimeString()}</p>}
-                            {vehicle.checking && <p>CHK: {new Date(vehicle.checking).toLocaleTimeString()}</p>}
-                            {vehicle.handover && <p>LOD: {new Date(vehicle.handover).toLocaleTimeString()}</p>}
-                            {vehicle.checkOut && <p>OUT: {new Date(vehicle.checkOut).toLocaleTimeString()}</p>}
-                            {vehicle.totalTime && (
-                              <p className="text-sm text-indigo-600 font-bold mt-1">Total: {vehicle.totalTime}</p>
-                            )}
-                            {vehicle.lastRevertedAt && (
-                              <div className="mt-1">
-                                <p className="text-[10px] text-red-400 italic">
-                                  Reverted: {new Date(vehicle.lastRevertedAt).toLocaleTimeString()}
-                                </p>
-                                {vehicle.revertRemark && (
-                                  <p className="text-[10px] text-red-500 font-bold">
-                                    Reason: {vehicle.revertRemark}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex flex-col gap-2 items-end">
-                            <div className="flex items-center gap-2">
-                              {vehicle.status !== 'Check Out' && (
-                                <button
-                                  onClick={() => setEditingVehicle(vehicle)}
-                                  className="p-3 text-stone-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all"
-                                  title="Edit Driver Details"
-                                >
-                                  <Edit2 size={18} />
-                                </button>
-                              )}
-                              {vehicle.status !== 'Waiting' && (
-                                <button 
-                                  onClick={() => handleStatusRevert(vehicle.id, vehicle.status)}
-                                  className="p-3 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all"
-                                  title="Revert Status"
-                                >
-                                  <RefreshCw size={18} className="rotate-180" />
-                                </button>
-                              )}
-                              {vehicle.status !== 'Check Out' ? (
-                                <button 
-                                  onClick={() => handleStatusUpdate(vehicle.id, vehicle.status)}
-                                  className="group flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-base font-bold transition-all shadow-md hover:shadow-lg active:scale-95"
-                                >
-                                  <span>{STATUS_FLOW[STATUS_FLOW.indexOf(vehicle.status) + 1]}</span>
-                                  <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-                                </button>
-                              ) : (
-                                <div className="flex items-center gap-1 text-emerald-600 font-bold text-sm px-4 py-3">
-                                  <CheckCircle2 size={16} />
-                                  <span>Completed</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
-                )}
-              </tbody>
-            </table>
-          </div>
-          {filteredVehicles.length === 0 && (
-            <div className="py-20 text-center">
-              <div className="bg-stone-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-300">
-                <Search size={32} />
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+          {loading ? (
+            [...Array(8)].map((_, i) => (
+              <div key={i} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+                <div className="flex justify-between items-start">
+                  <Skeleton className="w-16 h-16 rounded-2xl" />
+                  <Skeleton className="w-24 h-6 rounded-lg" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="w-3/4 h-6" />
+                  <Skeleton className="w-1/2 h-4" />
+                </div>
+                <Skeleton className="w-full h-2 rounded-full" />
+                <div className="flex justify-between">
+                  <Skeleton className="w-20 h-4" />
+                  <Skeleton className="w-20 h-4" />
+                </div>
+                <Skeleton className="w-full h-12 rounded-xl" />
               </div>
-              <p className="text-stone-500 font-medium">No vehicles found matching your criteria</p>
+            ))
+          ) : filteredVehicles.length === 0 ? (
+            <div className="col-span-full py-32 flex flex-col items-center justify-center text-center">
+              <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6 text-slate-300">
+                <Search size={48} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">No vehicles found</h3>
+              <p className="text-slate-500 max-w-sm">
+                We couldn't find any vehicles matching your current filters or search terms.
+              </p>
+              <button 
+                onClick={() => {
+                  setSearchTerm('');
+                  setSubFilter('All');
+                  setDateFilter('All');
+                  setTimeFilter('All');
+                  setStatusFilter('All');
+                }}
+                className="mt-6 text-indigo-600 font-bold hover:underline"
+              >
+                Clear all filters
+              </button>
             </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {filteredVehicles.map((vehicle) => (
+                <motion.div
+                  key={vehicle.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all duration-300 overflow-hidden flex flex-col"
+                >
+                  {/* Card Header */}
+                  <div className="p-6 pb-4 flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-16 h-16 rounded-2xl ${STATUS_SOLID_COLORS[vehicle.status]} flex flex-col items-center justify-center text-white shadow-lg transition-colors duration-500`}>
+                        <span className="text-[10px] font-black uppercase tracking-widest opacity-70 leading-none mb-1">{vehicle.planLoad}</span>
+                        <span className="text-2xl font-black leading-none">{vehicleQueues[vehicle.id] || '-'}</span>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vehicle</span>
+                          <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">{vehicle.sub}</span>
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none">{vehicle.vehicleNumber}</h3>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <button 
+                        onClick={() => handleStatusRevert(vehicle.id, vehicle.status)}
+                        className={`p-2 rounded-xl transition-all ${vehicle.status === 'Waiting' ? 'opacity-0 pointer-events-none' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
+                        title="Revert Status"
+                      >
+                        <RotateCcw size={18} className="rotate-180" />
+                      </button>
+                      <button 
+                        onClick={() => setEditingVehicle(vehicle)}
+                        className={`p-2 rounded-xl transition-all ${vehicle.status === 'Check Out' ? 'opacity-0 pointer-events-none' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                        title="Edit Details"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Driver Info */}
+                  <div className="px-6 py-4 bg-slate-50/50 border-y border-slate-100 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm">
+                      <User size={20} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-slate-900 truncate">{vehicle.driverName}</p>
+                      <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
+                        <Phone size={10} />
+                        {vehicle.driverPhone}
+                      </p>
+                    </div>
+                    {vehicle.tripC && (
+                      <div className="text-right">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Trip C</p>
+                        <p className="text-3xl font-black text-indigo-600">{vehicle.tripC}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Progress & Status */}
+                  <div className="p-6 flex-1 flex flex-col">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Status</span>
+                        <div className={`inline-flex flex-col px-3 py-1.5 rounded-xl border ${STATUS_COLORS[vehicle.status]} border-current/10 shadow-sm`}>
+                          <span className="text-xs font-black uppercase tracking-widest leading-tight">
+                            {STATUS_LABELS[vehicle.status].split('\n')[1].replace('(', '').replace(')', '')}
+                          </span>
+                          <span className="text-[10px] font-bold opacity-70 leading-tight">
+                            {STATUS_LABELS[vehicle.status].split('\n')[0]}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Progress</span>
+                        <span className="text-lg font-black text-slate-900">{vehicle.percentage}%</span>
+                      </div>
+                    </div>
+
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden mb-6 shadow-inner">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${vehicle.percentage}%` }}
+                        className={`h-full rounded-full shadow-lg ${
+                          vehicle.percentage === 100 ? 'bg-emerald-500' : 
+                          vehicle.percentage > 0 ? 'bg-indigo-500' : 'bg-slate-300'
+                        }`}
+                      />
+                    </div>
+
+                    {/* Timestamps Grid */}
+                    <div className="grid grid-cols-3 gap-y-4 gap-x-4 mb-8">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">CIN</span>
+                        <span className="text-xs font-black text-slate-700">{vehicle.checkIn ? new Date(vehicle.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">DOC</span>
+                        <span className="text-xs font-black text-slate-700">{vehicle.invoiceReceiving ? new Date(vehicle.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">CHK</span>
+                        <span className="text-xs font-black text-slate-700">{vehicle.checking ? new Date(vehicle.checking).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">LOD</span>
+                        <span className="text-xs font-black text-slate-700">{vehicle.handover ? new Date(vehicle.handover).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">COT</span>
+                        <span className="text-xs font-black text-slate-700">{vehicle.checkOut ? new Date(vehicle.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">EFF</span>
+                        {(() => {
+                          const delayStatus = getDelayStatus(vehicle.deliveryDate, vehicle.planLoad, vehicle.checkIn);
+                          if (!delayStatus || vehicle.status === 'Waiting') return <span className="text-xs font-black text-slate-300">N/A</span>;
+                          return delayStatus.status === 'Delay' ? (
+                            <span className="text-xs font-black text-red-500">{formatEfficiency(delayStatus.mins)}</span>
+                          ) : (
+                            <span className="text-xs font-black text-emerald-500">On Time</span>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="mt-auto">
+                      {vehicle.status !== 'Check Out' ? (
+                        <button 
+                          onClick={() => handleStatusUpdate(vehicle.id, vehicle.status)}
+                          className="w-full group flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl text-sm font-black transition-all shadow-lg shadow-indigo-100 active:scale-[0.98]"
+                        >
+                          <span>Next: {STATUS_FLOW[STATUS_FLOW.indexOf(vehicle.status) + 1]}</span>
+                          <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                      ) : (
+                        <div className="w-full flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 py-4 rounded-2xl text-sm font-black border border-emerald-100">
+                          <CheckCircle2 size={18} />
+                          <span>Operation Completed</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           )}
         </div>
-      </div>
-    </main>
+      </main>
+
 
       {/* Toast Notification */}
       <AnimatePresence>
@@ -2059,7 +2231,7 @@ export default function App() {
                             className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                             title="Restore"
                           >
-                            <RefreshCw size={16} />
+                            <RotateCcw size={16} />
                           </button>
                         </div>
                       </div>
@@ -2154,488 +2326,427 @@ export default function App() {
 
           const recentActivities = latestVehicles.flatMap(v => {
             const activities = [];
-            if (v.checkIn) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.trip, sub: v.sub, status: 'Check In' as Status, time: new Date(v.checkIn).getTime(), timeString: v.checkIn });
-            if (v.invoiceReceiving) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.trip, sub: v.sub, status: 'Invoice Receiving' as Status, time: new Date(v.invoiceReceiving).getTime(), timeString: v.invoiceReceiving });
-            if (v.checking) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.trip, sub: v.sub, status: 'Checking' as Status, time: new Date(v.checking).getTime(), timeString: v.checking });
-            if (v.handover) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.trip, sub: v.sub, status: 'Handover' as Status, time: new Date(v.handover).getTime(), timeString: v.handover });
-            if (v.checkOut) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.trip, sub: v.sub, status: 'Check Out' as Status, time: new Date(v.checkOut).getTime(), timeString: v.checkOut });
+            if (v.checkIn) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.tripC || '', sub: v.sub || '', status: 'Check In' as Status, time: new Date(v.checkIn).getTime(), timeString: v.checkIn });
+            if (v.invoiceReceiving) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.tripC || '', sub: v.sub || '', status: 'Invoice Receiving' as Status, time: new Date(v.invoiceReceiving).getTime(), timeString: v.invoiceReceiving });
+            if (v.checking) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.tripC || '', sub: v.sub || '', status: 'Checking' as Status, time: new Date(v.checking).getTime(), timeString: v.checking });
+            if (v.handover) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.tripC || '', sub: v.sub || '', status: 'Handover' as Status, time: new Date(v.handover).getTime(), timeString: v.handover });
+            if (v.checkOut) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.tripC || '', sub: v.sub || '', status: 'Check Out' as Status, time: new Date(v.checkOut).getTime(), timeString: v.checkOut });
             return activities;
-          }).sort((a, b) => b.time - a.time).slice(0, 20);
+          }).sort((a, b) => b.time - a.time).slice(0, 30);
+
+          const total = latestVehicles.length;
+          const completed = latestVehicles.filter(v => v.status === 'Check Out').length;
+          const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
           return (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] bg-stone-50 text-stone-900 h-screen overflow-hidden font-sans flex flex-col"
+              className="fixed inset-0 z-[100] bg-slate-50 text-slate-900 h-screen overflow-hidden font-sans flex flex-col"
             >
               {/* Dashboard Header */}
-              <header className="px-8 py-4 bg-white border-b border-stone-200 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-5">
-                  <div className="bg-indigo-600 w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-                    <LayoutDashboard size={24} />
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-bold tracking-tight text-stone-900">Vehicle Loading Tracker Dashboard</h1>
-                    <div className="flex flex-col gap-1 mt-1">
-                      <div className="flex items-center gap-2 text-stone-500 text-sm font-medium">
-                        <Calendar size={14} />
-                        {latestDate || 'No Data'}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-stone-400 text-xs font-bold">
-                          Last Updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                        </span>
-                        <div className="flex items-center gap-1.5 bg-emerald-500 text-white px-2 py-0.5 rounded text-[9px] font-black tracking-widest shadow-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                          ONLINE
+              <header className="px-8 py-6 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-sm z-10">
+                <div className="flex items-center gap-8">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-indigo-600 w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/20 shrink-0">
+                      <Truck size={28} className="animate-pulse" />
+                    </div>
+                    <div>
+                      <h1 className="text-2xl font-black tracking-tighter text-slate-900 leading-none">VEHICLE<span className="text-indigo-600">TRACKER</span> MONITOR</h1>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                          <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">ONLINE</span>
                         </div>
+                        <div className="h-3 w-px bg-slate-200" />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Logistics Intelligence</span>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Status Breakdown in Header */}
+                  <div className="hidden 2xl:flex items-center gap-8 ml-8">
+
+                    {/* Status Indicators */}
+                    <div className="flex items-center gap-6">
+                      {stats.list.map((s, i) => (
+                        <div key={i} className="flex items-center gap-3">
+                          <div className={`w-12 h-12 rounded-full ${s.solidBg} flex items-center justify-center shadow-lg shadow-${s.solidBg.split('-')[1]}-500/20 shrink-0`}>
+                            <s.icon size={20} className="text-white" />
+                          </div>
+                          <div className="flex flex-col">
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-xl font-black text-slate-900 leading-none">{s.value}</span>
+                              <span className="text-[10px] font-bold text-slate-400 leading-none">({s.percentage}%)</span>
+                            </div>
+                            <div className="flex flex-col mt-1">
+                              <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider leading-none">{s.label}</span>
+                              <span className="text-[8px] font-bold text-slate-300 leading-none mt-0.5">{s.subLabel}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
 
-                <RecentActivityTicker activities={recentActivities}>
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <div className="flex items-center gap-2 bg-white border border-stone-200 px-2 py-1 rounded-lg">
-                      <Filter size={14} className="text-stone-400" />
-                      <select 
-                        className="bg-transparent border-none text-xs font-bold focus:ring-0 pr-6 py-0"
-                        value={dashboardPlanFilter}
-                        onChange={(e) => setDashboardPlanFilter(e.target.value)}
-                      >
-                        <option value="All">All Planloads</option>
-                        {(() => {
-                          const plans = [...new Set(latestVehicles.map(v => (v.planLoad || '').trim()).filter(Boolean))].sort(sortPlanLoad);
-                          return plans.map(p => <option key={p} value={p}>{p}</option>);
-                        })()}
-                      </select>
-                    </div>
-                    <button 
-                      onClick={() => setIsFullScreenSummary(false)}
-                      className="bg-stone-900 hover:bg-stone-800 text-white px-5 py-2 rounded-xl transition-all flex items-center gap-2 font-bold text-sm shadow-lg shadow-stone-200 active:scale-95"
-                    >
-                      <Minimize size={16} />
-                      Exit Dashboard
-                    </button>
+                <div className="flex items-center gap-6">
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Current Time</p>
+                    <p className="text-xl font-black text-slate-900 tabular-nums">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
                   </div>
-                </RecentActivityTicker>
+                  <button 
+                    onClick={() => setIsFullScreenSummary(false)}
+                    className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-800 transition-all flex items-center gap-2 shadow-xl active:scale-95 text-sm"
+                  >
+                    <Minimize2 size={18} />
+                    Exit Monitor
+                  </button>
+                </div>
               </header>
 
-              <main className="flex-1 p-6 overflow-hidden">
-                {(() => {
-                  const total = latestVehicles.length;
-                const completed = latestVehicles.filter(v => v.status === 'Check Out').length;
-                const inProgress = latestVehicles.filter(v => v.status !== 'Waiting' && v.status !== 'Check Out').length;
-                const waiting = latestVehicles.filter(v => v.status === 'Waiting').length;
-
-                const planGroups = [...new Set(latestVehicles.map(v => v.planLoad))].sort(sortPlanLoad);
-                const handOverProgress = planGroups.map(plan => {
-                  const roundVehicles = latestVehicles.filter(v => v.planLoad === plan);
-                  const trips = roundVehicles.length;
-                  const checkIn = roundVehicles.filter(v => v.status !== 'Waiting').length;
-                  const completed = roundVehicles.filter(v => v.status === 'Check Out').length;
-                  const startHandover = checkIn - completed;
-                  const percentage = trips > 0 ? (completed / trips) * 100 : 0;
-                  return { plan, trips, checkIn, startHandover, completed, percentage };
-                });
-
-                const combinedProgress = planGroups.map(plan => {
-                  const roundVehicles = latestVehicles.filter(v => v.planLoad === plan);
-                  const roundTotal = roundVehicles.length;
-                  const statuses = STATUS_FLOW.map(status => {
-                    const count = roundVehicles.filter(v => v.status === status).length;
-                    return {
-                      status,
-                      count,
-                      percentage: roundTotal > 0 ? (count / roundTotal) * 100 : 0,
-                      color: STATUS_HEX_COLORS[status]
-                    };
-                  }).filter(s => s.count > 0);
-
-                  return { plan, total: roundTotal, statuses };
-                });
-
-                return (
-                  <div className="grid grid-cols-12 gap-6 h-full">
-                    {/* Left Panel: Metrics & Distribution */}
-                    <aside className="col-span-12 lg:col-span-3 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2">
-                      {/* Overview Stats & Efficiency */}
-                      <section className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm shrink-0 h-[130px] flex flex-col">
-                        <AnimatePresence mode="wait">
-                          {metricsView === 'overview' ? (
-                            <motion.div
-                              key="overview"
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -10 }}
-                              className="flex-1 flex flex-col"
-                            >
-                              <h2 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <LayoutDashboard size={12} className="text-indigo-500" />
-                                Today's Overview
-                              </h2>
-                              <div className="grid grid-cols-4 gap-2 flex-1">
-                                {[
-                                  { label: 'Total', value: total, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                                  { label: 'Wait', value: waiting, color: 'text-stone-500', bg: 'bg-stone-50' },
-                                  { label: 'Active', value: inProgress, color: 'text-amber-600', bg: 'bg-amber-50' },
-                                  { label: 'Done', value: completed, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                                ].map((s, i) => (
-                                  <div key={i} className={`${s.bg} p-2 rounded-xl border border-white/50 flex flex-col items-center justify-center text-center`}>
-                                    <p className={`text-xl font-black ${s.color} leading-none mb-1`}>{s.value}</p>
-                                    <p className="text-[9px] font-bold text-stone-500 uppercase tracking-wider">{s.label}</p>
+              <main className="flex-1 flex overflow-hidden bg-slate-50">
+                {/* Left Panel: Feed & Planload Status */}
+                <aside className="w-[400px] bg-white border-r border-slate-200 flex flex-col shrink-0 overflow-hidden shadow-lg z-10">
+                  {/* Top Half: Live Feed */}
+                  <div className="h-1/2 flex flex-col border-b border-slate-100">
+                    <div className="p-6 bg-slate-50/50 border-b border-slate-100">
+                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">Live Activity Feed</h3>
+                    </div>
+                    <div className="flex-1 overflow-hidden relative">
+                      {(() => {
+                        const activities = recentActivities.slice(0, 10);
+                        return (
+                          <div className="absolute top-0 left-0 right-0 p-4 space-y-2 animate-marquee-vertical-dashboard">
+                            {[...activities, ...activities].map((activity, idx) => {
+                              const isNew = (Date.now() - activity.time) < 300000; // 5 minutes
+                              const Icon = getStatusIcon(activity.status);
+                              return (
+                                <div key={`${activity.vehicleNumber}-${idx}`} className="flex items-center gap-4 p-3 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md hover:border-indigo-100 transition-all group relative overflow-hidden">
+                                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${STATUS_SOLID_COLORS[activity.status]}`} />
+                                  <div className={`w-12 h-12 rounded-xl ${STATUS_SOLID_COLORS[activity.status]} text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/10`}>
+                                    <Icon size={22} />
                                   </div>
-                                ))}
-                              </div>
-                            </motion.div>
-                          ) : (
-                            <motion.div
-                              key="efficiency"
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -10 }}
-                              className="flex-1 flex flex-col"
-                            >
-                              <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <BarChart3 size={12} className="text-indigo-500" />
-                                Efficiency Metrics
-                              </h3>
-                              {(() => {
-                                const completedVehicles = latestVehicles.filter(v => v.status === 'Check Out');
-                                const avgTime = completedVehicles.length > 0 
-                                  ? (completedVehicles.reduce((acc, v) => {
-                                      const [h, m] = (v.totalTime || '0h 0m').split(' ').map(s => parseInt(s));
-                                      return acc + (h * 60 + (m || 0));
-                                    }, 0) / completedVehicles.length).toFixed(0)
-                                  : 0;
-
-                                return (
-                                  <div className="grid grid-cols-4 gap-2 flex-1">
-                                    <div className="bg-stone-900 p-2.5 rounded-xl text-white relative overflow-hidden group flex flex-col justify-center border border-white/5">
-                                      <div className="absolute -right-1 -bottom-1 opacity-10 group-hover:scale-110 transition-transform">
-                                        <Clock size={32} />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-base font-black text-slate-900 tracking-tight">{activity.vehicleNumber}</p>
+                                        {isNew && (
+                                          <span className="flex h-2 w-2 rounded-full bg-red-500 animate-ping" />
+                                        )}
                                       </div>
-                                      <p className="text-xl font-black leading-none mb-1">{avgTime}</p>
-                                      <p className="text-[8px] font-bold text-stone-400 uppercase tracking-wider">Avg Mins</p>
+                                      <span className="text-[10px] font-black text-slate-400 tabular-nums">{new Date(activity.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                     </div>
-                                    <div className="bg-indigo-600 p-2.5 rounded-xl text-white relative overflow-hidden group flex flex-col justify-center border border-white/5">
-                                      <div className="absolute -right-1 -bottom-1 opacity-10 group-hover:scale-110 transition-transform">
-                                        <CheckCircle2 size={32} />
+                                    <div className="flex items-center justify-between mt-1">
+                                      <div className="flex flex-col">
+                                        <p className="text-[10px] font-bold text-slate-500 truncate uppercase tracking-wider">{activity.driverName}</p>
+                                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">T: {activity.trip} | S: {activity.sub}</p>
                                       </div>
-                                      <p className="text-xl font-black leading-none mb-1">{completed}</p>
-                                      <p className="text-[8px] font-bold text-indigo-200 uppercase tracking-wider">Handled</p>
-                                    </div>
-                                    <div className="bg-emerald-500 p-2.5 rounded-xl text-white relative overflow-hidden group flex flex-col justify-center border border-white/5">
-                                      <div className="absolute -right-1 -bottom-1 opacity-10 group-hover:scale-110 transition-transform">
-                                        <CheckCircle2 size={32} />
+                                      <div className="flex items-center gap-1.5">
+                                        <span className={`text-[9px] font-black ${STATUS_COLORS[activity.status].split(' ')[1]} uppercase tracking-widest`}>
+                                          {STATUS_LABELS[activity.status].split('\n')[1].replace('(', '').replace(')', '')}
+                                        </span>
                                       </div>
-                                      <p className="text-xl font-black leading-none mb-1">
-                                        {latestVehicles.filter(v => v.status !== 'Waiting' && getDelayStatus(v.deliveryDate, v.planLoad, v.checkIn)?.status === 'On Time').length}
-                                      </p>
-                                      <p className="text-[8px] font-bold text-emerald-100 uppercase tracking-wider">On Time</p>
-                                    </div>
-                                    <div className="bg-red-500 p-2.5 rounded-xl text-white relative overflow-hidden group flex flex-col justify-center border border-white/5">
-                                      <div className="absolute -right-1 -bottom-1 opacity-10 group-hover:scale-110 transition-transform">
-                                        <AlertCircle size={32} />
-                                      </div>
-                                      <p className="text-xl font-black leading-none mb-1">
-                                        {latestVehicles.filter(v => v.status !== 'Waiting' && getDelayStatus(v.deliveryDate, v.planLoad, v.checkIn)?.status === 'Delay').length}
-                                      </p>
-                                      <p className="text-[8px] font-bold text-red-100 uppercase tracking-wider">Delayed</p>
                                     </div>
                                   </div>
-                                );
-                              })()}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </section>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
 
-                      {/* Combined Progress */}
-                      <section className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm flex-1 min-h-[320px] flex flex-col overflow-hidden">
-                        <div className="flex-1 flex flex-col overflow-hidden">
-                          <h2 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4 flex items-center justify-between">
-                            Progress by Planload & Status
-                            <BarChart3 size={14} className="text-indigo-500" />
-                          </h2>
-
-                          <div id="progress-scroll-container" className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1">
-                            {combinedProgress.map((cp, i) => (
-                              <div key={i} className="group">
-                                <div className="flex items-center justify-between mb-1.5">
-                                  <span className="text-sm font-bold text-stone-900">{cp.plan}</span>
-                                  <span className="text-xs font-bold text-stone-500">
-                                    Total {cp.total} Vehicles ({Math.round((cp.statuses.find(s => s.status === 'Check Out')?.count || 0) / cp.total * 100)}% Completed)
+                  {/* Bottom Half: Planload Status */}
+                  <div className="h-1/2 flex flex-col">
+                    <div className="p-6 bg-slate-50/50 border-b border-slate-100">
+                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">PLANLOAD Status</h3>
+                    </div>
+                    <div className="flex-1 overflow-hidden relative p-4" style={{ perspective: '1200px' }}>
+                      <AnimatePresence mode="wait">
+                        {(() => {
+                          const planLoads = [...new Set(latestVehicles.map(v => v.planLoad))].sort(sortPlanLoad);
+                          if (planLoads.length === 0) return null;
+                          const safeIndex = currentRoundIndex % planLoads.length;
+                          const plan = planLoads[safeIndex];
+                          const vehiclesInPlan = latestVehicles.filter(v => v.planLoad === plan);
+                          const completed = vehiclesInPlan.filter(v => v.status === 'Check Out').length;
+                          const total = vehiclesInPlan.length;
+                          
+                          return (
+                            <motion.div 
+                              key={plan}
+                              initial={{ opacity: 0, rotateY: 90 }}
+                              animate={{ opacity: 1, rotateY: 0 }}
+                              exit={{ opacity: 0, rotateY: -90 }}
+                              transition={{ duration: 0.5 }}
+                              className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm h-full flex flex-col"
+                            >
+                              <div className="flex items-center justify-between mb-6">
+                                <div className="flex flex-col">
+                                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">PLANLOAD</span>
+                                  <span className="text-2xl font-black text-slate-900 tracking-tighter leading-none">
+                                    {(() => {
+                                      const p = plan as string;
+                                      const [h] = p.split(':');
+                                      const hour = parseInt(h);
+                                      const ampm = hour >= 12 ? 'PM' : 'AM';
+                                      return `${p} ${ampm}`;
+                                    })()}
                                   </span>
                                 </div>
-                                
-                                {/* Stacked Bar */}
-                                <div className="h-4 w-full bg-stone-100 rounded-full overflow-hidden flex shadow-inner">
-                                  {cp.statuses.map((s, idx) => (
-                                    <motion.div 
-                                      key={s.status}
-                                      initial={{ width: 0 }}
-                                      animate={{ width: `${s.percentage}%` }}
-                                      className="h-full transition-all duration-1000 border-r border-white/20 last:border-0"
-                                      style={{ backgroundColor: s.color }}
-                                      title={`${STATUS_LABELS[s.status].replace('\n', ' ')}: ${s.count}`}
-                                    />
-                                  ))}
-                                </div>
-
-                                {/* Detail Text */}
-                                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-                                  {cp.statuses.map(s => (
-                                    <div key={s.status} className="flex items-center gap-1 text-xs font-bold" style={{ color: s.color }}>
-                                      <span>{STATUS_LABELS[s.status].split('\n')[0]}:</span>
-                                      <span>{s.count}</span>
-                                    </div>
-                                  ))}
+                                <div className="px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-lg">
+                                  <span className="text-sm font-black text-indigo-600 tabular-nums">{completed}/{total}</span>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      </section>
-                    </aside>
-
-                    {/* Main Panel: Live Queue */}
-                    <main className="col-span-12 lg:col-span-9 flex flex-col overflow-hidden">
-                      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm flex-1 flex flex-col overflow-hidden">
-                        {/* Panel Header */}
-                        <div className="px-8 py-6 border-b border-stone-100 flex items-center justify-between shrink-0 bg-stone-50/30 relative overflow-hidden">
-                          {/* Scanning Effect */}
-                          <motion.div 
-                            animate={{ 
-                              top: ["-100%", "200%"],
-                              opacity: [0, 0.3, 0]
-                            }}
-                            transition={{ 
-                              duration: 4, 
-                              repeat: Infinity, 
-                              ease: "linear" 
-                            }}
-                            className="absolute left-0 right-0 h-20 bg-gradient-to-b from-transparent via-indigo-500/10 to-transparent pointer-events-none z-0"
-                          />
-                          
-                          <div className="flex items-center gap-4 relative z-10">
-                            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-100">
-                              <Truck size={20} />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-3">
-                                <h2 className="text-xl font-bold text-stone-900 tracking-tight">Live Queue Status</h2>
-                                <div className="flex items-center gap-1.5 bg-red-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest shadow-sm">
-                                  <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                                  LIVE
-                                </div>
-                              </div>
-                              <p className="text-xs font-medium text-stone-500">Real-time vehicle tracking and status updates</p>
-                            </div>
-                          </div>
-
-                          {/* Round Time in Header */}
-                          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
-                            {(() => {
-                              const activePlanGroups = [...new Set(latestVehicles.map(v => v.planLoad))].sort(sortPlanLoad);
-                              const safeIndex = currentRoundIndex % activePlanGroups.length;
-                              const currentPlan = activePlanGroups[safeIndex];
-                              return currentPlan ? (
-                                <>
-                                  <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-[-8px]">Plan Load</span>
-                                  <motion.div
-                                    key={currentPlan}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="text-5xl font-black text-indigo-600 tracking-tighter drop-shadow-sm"
-                                  >
-                                    {currentPlan}
-                                  </motion.div>
-                                </>
-                              ) : null;
-                            })()}
-                          </div>
-
-                          <div className="flex items-center gap-6">
-                            {(() => {
-                              const activePlanGroups = [...new Set(latestVehicles.map(v => v.planLoad))].sort(sortPlanLoad);
-                              if (activePlanGroups.length <= 1) return null;
-                              return (
-                                <div className="flex items-center gap-1.5">
-                                  {activePlanGroups.map((_, idx) => (
+                              <div className="h-4 bg-slate-100 rounded-full overflow-hidden flex">
+                                {STATUS_FLOW.map(status => {
+                                  const count = vehiclesInPlan.filter(v => v.status === status).length;
+                                  if (count === 0) return null;
+                                  const width = (count / total) * 100;
+                                  return (
                                     <div 
-                                      key={idx} 
-                                      className={`h-1.5 rounded-full transition-all duration-500 ${idx === currentRoundIndex ? 'w-8 bg-indigo-600' : 'w-1.5 bg-stone-200'}`} 
+                                      key={status} 
+                                      className={`h-full ${STATUS_SOLID_COLORS[status]}`} 
+                                      style={{ width: `${width}%` }}
                                     />
-                                  ))}
-                                </div>
-                              );
-                            })()}
-                            <div className="h-8 w-px bg-stone-200" />
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center gap-2 text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-                                <motion.div 
-                                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                                  transition={{ duration: 2, repeat: Infinity }}
-                                  className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" 
-                                />
-                                Active
+                                  );
+                                })}
                               </div>
-                              <div className="flex items-center gap-2 text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                                Completed
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Panel Content */}
-                        <div ref={dashboardScrollRef} className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                          <AnimatePresence mode="wait">
-                            {(() => {
-                              const activePlanGroups = [...new Set(latestVehicles.map(v => v.planLoad))].sort(sortPlanLoad);
-                              
-                              if (activePlanGroups.length === 0) {
-                                return (
-                                  <motion.div 
-                                    key="empty"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="h-full flex flex-col items-center justify-center text-stone-300 space-y-6 py-20"
-                                  >
-                                    <div className="w-24 h-24 bg-stone-100 rounded-full flex items-center justify-center text-stone-300">
-                                      <Truck size={48} strokeWidth={1.5} />
+                              <div className="grid grid-cols-3 gap-x-4 gap-y-8 mt-8">
+                                {STATUS_FLOW.map(status => {
+                                  const count = vehiclesInPlan.filter(v => v.status === status).length;
+                                  const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+                                  const Icon = getStatusIcon(status);
+                                  return (
+                                    <div key={status} className="flex flex-col">
+                                      <div className="flex items-center gap-3 mb-2">
+                                        <div className={`w-10 h-10 rounded-full ${STATUS_SOLID_COLORS[status]} text-white flex items-center justify-center shadow-md shrink-0`}>
+                                          <Icon size={18} strokeWidth={2.5} />
+                                        </div>
+                                        <div className="flex flex-col min-w-0">
+                                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate leading-none mb-1">
+                                            {STATUS_LABELS[status].split('\n')[0]}
+                                          </span>
+                                          <div className="flex items-baseline gap-1.5">
+                                            <span className="text-2xl font-black text-slate-900 leading-none">{count}</span>
+                                            <span className="text-[10px] font-bold text-slate-400">({percentage}%)</span>
+                                          </div>
+                                        </div>
+                                      </div>
                                     </div>
-                                    <p className="text-xl font-bold uppercase tracking-widest">No Active Data</p>
-                                  </motion.div>
-                                );
-                              }
+                                  );
+                                })}
+                              </div>
+                            </motion.div>
+                          );
+                        })()}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </aside>
+                {/* Main Panel: Live Monitor */}
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  <div className="p-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">
+                          LIVE Queue Monitor
+                        </h2>
+                      </div>
+                      
+                      <div className="h-8 w-px bg-slate-200" />
+                      
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">PLANLOAD</span>
+                        <div className="text-4xl font-black text-slate-900 tracking-tighter leading-none mb-2">
+                          {(() => {
+                            const activePlanGroups = [...new Set(latestVehicles.map(v => v.planLoad))].sort(sortPlanLoad) as string[];
+                            const safeIndex = currentRoundIndex % activePlanGroups.length;
+                            const plan = activePlanGroups[safeIndex] || '--:--';
+                            if (plan === '--:--') return plan;
+                            const [h] = plan.split(':');
+                            const hour = parseInt(h);
+                            const ampm = hour >= 12 ? 'PM' : 'AM';
+                            return `${plan} ${ampm}`;
+                          })()}
+                        </div>
+                        {(() => {
+                          const activePlanGroups = [...new Set(latestVehicles.map(v => v.planLoad))].sort(sortPlanLoad) as string[];
+                          if (activePlanGroups.length <= 1) return null;
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              {activePlanGroups.map((_, idx) => (
+                                <div 
+                                  key={idx} 
+                                  onClick={() => setCurrentRoundIndex(idx)}
+                                  className={`h-1 rounded-full transition-all duration-700 cursor-pointer hover:bg-indigo-300 ${idx === currentRoundIndex % activePlanGroups.length ? 'w-8 bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'w-1.5 bg-slate-200'}`} 
+                                />
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
 
-                              const safeIndex = currentRoundIndex % activePlanGroups.length;
-                              const plan = activePlanGroups[safeIndex];
-
-                              return (
-                                <motion.div 
-                                  key={plan}
-                                  initial={{ opacity: 0, x: 20 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  exit={{ opacity: 0, x: -20 }}
-                                  transition={{ duration: 0.5, ease: "easeInOut" }}
-                                  className="space-y-8"
-                                >
-                                  <div className="flex items-center gap-4">
-                                    <div className="h-px flex-1 bg-stone-100" />
-                                    <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest bg-stone-50 px-3 py-1 rounded-full border border-stone-100">
-                                      {latestVehicles.filter(v => v.planLoad === plan).length} Vehicles Total
-                                    </span>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                    {latestVehicles
-                                      .filter(v => v.planLoad === plan)
-                                      .sort((a, b) => (vehicleQueues[a.id] || 999) - (vehicleQueues[b.id] || 999))
-                                      .map((v) => {
-                                        const isCheckOut = v.status === 'Check Out';
-                                        return (
-                                          <motion.div 
-                                            key={v.id} 
-                                            layout
-                                            initial={{ opacity: 0, scale: 0.95 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            className={`group relative bg-white p-5 rounded-2xl border transition-all duration-300 ${isCheckOut ? 'border-emerald-100 bg-emerald-50/20' : 'border-stone-200 hover:border-indigo-300 hover:shadow-xl hover:shadow-indigo-500/5'}`}
-                                          >
-                                            <div className="flex items-start justify-between mb-4">
-                                              <div className="flex items-center gap-4">
-                                                <div className={`w-14 h-14 rounded-xl ${STATUS_SOLID_COLORS[v.status]} text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-black/5`}>
-                                                  {vehicleQueues[v.id] || '-'}
-                                                </div>
-                                                <div>
-                                                  <h4 className="text-xl font-black text-stone-900 tracking-tight leading-none mb-1">{v.vehicleNumber}</h4>
-                                                  <p className="text-xs font-bold text-stone-400 uppercase tracking-wider truncate max-w-[120px] mb-0.5">{v.driverName}</p>
-                                                  <p className="text-sm font-black text-indigo-600 uppercase tracking-widest mb-1.5">{v.tripC || '-'}</p>
-                                                  <div className={`inline-block px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider whitespace-pre-line text-left leading-tight ${STATUS_COLORS[v.status]}`}>
-                                                    {STATUS_LABELS[v.status]}
-                                                  </div>
-                                                </div>
-                                              </div>
-                                              <div className="text-right flex flex-col items-end">
-                                                <p className="text-xs font-black text-indigo-600 uppercase tracking-widest leading-none mb-1.5">SUB</p>
-                                                <p className="px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-sm font-bold text-stone-900 truncate max-w-[100px]">{v.sub || '-'}</p>
-                                              </div>
-                                            </div>
-
-                                            <div className="flex items-center justify-between pt-4 border-t border-stone-100">
-                                              <div className="flex items-center gap-2 text-stone-400">
-                                                <Clock size={14} />
-                                                <span className="text-xs font-bold">
-                                                  Last Updated: {v.invoiceReceiving ? new Date(v.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                                                </span>
-                                              </div>
-                                              <div className="flex flex-col items-end gap-1.5">
-                                                {isCheckOut ? (
-                                                  <div className="flex items-center gap-1.5">
-                                                    <motion.div 
-                                                      animate={{ 
-                                                        scale: [1, 1.3, 1],
-                                                        opacity: [0.6, 1, 0.6]
-                                                      }}
-                                                      transition={{ duration: 2, repeat: Infinity }}
-                                                      className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" 
-                                                    />
-                                                    <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Completed</span>
-                                                  </div>
-                                                ) : (
-                                                  <div className="flex items-center gap-1.5">
-                                                    <motion.div 
-                                                      animate={{ 
-                                                        scale: [1, 1.3, 1],
-                                                        opacity: [0.6, 1, 0.6]
-                                                      }}
-                                                      transition={{ duration: 2, repeat: Infinity }}
-                                                      className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.6)]" 
-                                                    />
-                                                    <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest">Active</span>
-                                                  </div>
-                                                )}
-                                                {(() => {
-                                                  const delayStatus = getDelayStatus(v.deliveryDate, v.planLoad, v.checkIn);
-                                                  if (!delayStatus) return null;
-                                                  return delayStatus.status === 'Delay' ? (
-                                                    <div className="flex items-center gap-1.5">
-                                                      <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                                                      <span className="text-[9px] font-bold text-red-600 uppercase tracking-widest whitespace-nowrap">
-                                                        DELAY {delayStatus.mins}m
-                                                      </span>
-                                                    </div>
-                                                  ) : (
-                                                    <div className="flex items-center gap-1.5">
-                                                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                                      <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest whitespace-nowrap">
-                                                        ON TIME
-                                                      </span>
-                                                    </div>
-                                                  );
-                                                })()}
-                                              </div>
-                                            </div>
-                                          </motion.div>
-                                        );
-                                      })}
-                                  </div>
-                                </motion.div>
-                              );
-                            })()}
-                          </AnimatePresence>
+                    <div className="flex items-center gap-8">
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active</span>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Completed</span>
                         </div>
                       </div>
-                    </main>
+                    </div>
                   </div>
-                );
-              })()}
-            </main>
-          </motion.div>
+
+                  
+                  {/* Monitor List */}
+                  <div ref={dashboardScrollRef} className="flex-1 overflow-hidden bg-white flex flex-col">
+                    <AnimatePresence mode="wait">
+                      {(() => {
+                        const activePlanGroups = [...new Set(latestVehicles.map(v => v.planLoad))].sort(sortPlanLoad);
+                        
+                        if (activePlanGroups.length === 0) {
+                          return (
+                            <motion.div 
+                              key="empty"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="h-full flex flex-col items-center justify-center text-slate-700 space-y-8"
+                            >
+                              <div className="w-32 h-32 bg-slate-900 rounded-full flex items-center justify-center text-slate-800 border border-slate-800">
+                                <Truck size={64} strokeWidth={1} />
+                              </div>
+                              <p className="text-2xl font-black uppercase tracking-[0.3em]">No Active Operations</p>
+                            </motion.div>
+                          );
+                        }
+
+                        const safeIndex = currentRoundIndex % activePlanGroups.length;
+                        const plan = activePlanGroups[safeIndex];
+
+                        return (
+                          <motion.div 
+                            key={plan}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="w-full h-full flex flex-col"
+                          >
+                            {/* Table Header - Stays fixed at top */}
+                            <div className="z-10 bg-slate-900 text-white grid grid-cols-[80px_1fr_2fr_1.5fr_2fr_120px_140px] gap-6 px-10 py-5 text-[11px] font-black uppercase tracking-[0.25em] border-b border-slate-800 shrink-0">
+                              <div>Queue</div>
+                              <div>Vehicle</div>
+                              <div>Driver</div>
+                              <div>Status</div>
+                              <div>Trip C & Sub</div>
+                              <div>Last Updated</div>
+                              <div>Efficiency</div>
+                            </div>
+
+                            {/* Scrollable Body Container */}
+                            <div className="flex-1 overflow-hidden relative">
+                              <div className="scroll-content will-change-transform divide-y divide-slate-100">
+                                {latestVehicles
+                                  .filter(v => v.planLoad === plan)
+                                  .sort((a, b) => (vehicleQueues[a.id] || 999) - (vehicleQueues[b.id] || 999))
+                                  .map((v, idx) => {
+                                    const isCheckOut = v.status === 'Check Out';
+                                    const delayStatus = getDelayStatus(v.deliveryDate, v.planLoad, v.checkIn);
+                                    
+                                    return (
+                                      <div 
+                                        key={v.id} 
+                                        className={`grid grid-cols-[80px_1fr_2fr_1.5fr_2fr_120px_140px] gap-6 px-10 py-6 items-center transition-colors hover:bg-indigo-50/30 ${isCheckOut ? 'bg-emerald-50/40' : idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                                      >
+                                        <div className={`w-12 h-12 rounded-xl ${STATUS_SOLID_COLORS[v.status]} text-white flex items-center justify-center text-2xl font-black shadow-md`}>
+                                          {vehicleQueues[v.id] || '-'}
+                                        </div>
+                                        
+                                        <div className="flex flex-col">
+                                          <span className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                                            {v.vehicleNumber}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex flex-col">
+                                          <span className="text-lg font-black text-slate-700 tracking-tight leading-tight truncate">
+                                            {v.driverName}
+                                          </span>
+                                        </div>
+                                        
+                                        <div>
+                                          <div className={`inline-flex flex-col px-4 py-2 rounded-xl border ${STATUS_COLORS[v.status]} border-current/10 shadow-sm bg-white/50`}>
+                                            <span className="text-xs font-black uppercase tracking-widest leading-tight">
+                                              {STATUS_LABELS[v.status].split('\n')[1].replace('(', '').replace(')', '')}
+                                            </span>
+                                            <span className="text-[10px] font-bold opacity-70 leading-tight mt-0.5">
+                                              {STATUS_LABELS[v.status].split('\n')[0]}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        
+                                        <div className="flex flex-col">
+                                          <span className="text-xl font-black text-indigo-600 tabular-nums leading-tight">
+                                            {v.tripC || '-'}
+                                          </span>
+                                          <span className="text-xs font-bold text-slate-400 truncate mt-1">
+                                            {v.sub || '-'}
+                                          </span>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-2 text-slate-500">
+                                          <Clock size={16} />
+                                          <span className="text-sm font-bold tabular-nums">
+                                            {v.invoiceReceiving ? new Date(v.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                          </span>
+                                        </div>
+                                        
+                                        <div>
+                                          {delayStatus && (
+                                            delayStatus.status === 'Delay' ? (
+                                              <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2 bg-red-500/10 px-3 py-1.5 rounded-full border border-red-500/20 w-fit">
+                                                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                                                  <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">
+                                                    DELAY
+                                                  </span>
+                                                </div>
+                                                <span className="text-xs font-black text-red-600 ml-1">
+                                                  {formatEfficiency(delayStatus.mins)}
+                                                </span>
+                                              </div>
+                                            ) : (
+                                              <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 w-fit">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+                                                  ON TIME
+                                                </span>
+                                              </div>
+                                            )
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })()}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </main>
+            </motion.div>
           );
         })()}
       </AnimatePresence>

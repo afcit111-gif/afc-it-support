@@ -1,5 +1,5 @@
 {
-  "name": "Vehicle Loading Tracker",
+  "name": "Vehicle Tracker",
   "description": "A real-time dashboard for warehouse staff to track vehicle arrival, loading progress, and handover status with automated timestamps and progress tracking.",
   "requestFramePermissions": []
 }

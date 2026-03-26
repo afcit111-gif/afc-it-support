@@ -1,5 +1,36 @@
 @import "tailwindcss";
 
+@keyframes marquee-vertical {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+@keyframes marquee-vertical-dashboard {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+@keyframes marquee-vertical-dashboard-plan {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+.animate-marquee-vertical {
+  animation: marquee-vertical 60s linear infinite;
+}
+
+.animate-marquee-vertical-dashboard {
+  animation: marquee-vertical-dashboard 60s linear infinite;
+}
+
+.animate-marquee-vertical-dashboard-plan {
+  animation: marquee-vertical-dashboard-plan 90s linear infinite;
+}
+
+.animate-marquee-vertical:hover {
+  animation-play-state: paused;
+}
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
