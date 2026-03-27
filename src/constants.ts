@@ -3,12 +3,21 @@ import { Status } from './types';
 export const STATUS_FLOW: Status[] = ['Waiting', 'Check In', 'Invoice Receiving', 'Checking', 'Handover', 'Check Out'];
 
 export const STATUS_LABELS: Record<Status, string> = {
-  'Waiting': 'รอรถ\n(Waiting)',
-  'Check In': 'รถเข้าพื้นที่\n(Check-In)',
-  'Invoice Receiving': 'รับเอกสาร\n(Document Received)',
-  'Checking': 'กำลังตรวจงาน\n(Checking)',
-  'Handover': 'กำลังโหลด\n(Loading)',
-  'Check Out': 'ออกจากคลัง\n(Check-Out)'
+  'Waiting': 'Waiting',
+  'Check In': 'Check In',
+  'Invoice Receiving': 'Invoice Receiving',
+  'Checking': 'Checking',
+  'Handover': 'Handover',
+  'Check Out': 'Check Out'
+};
+
+export const STATUS_ABBR: Record<Status, string> = {
+  'Waiting': 'WTG',
+  'Check In': 'CIN',
+  'Invoice Receiving': 'IVR',
+  'Checking': 'CHK',
+  'Handover': 'HOV',
+  'Check Out': 'COT'
 };
 
 export const STATUS_PERCENTAGES: Record<Status, number> = {

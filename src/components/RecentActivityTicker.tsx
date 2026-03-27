@@ -170,10 +170,10 @@ export const RecentActivityTicker = ({ activities, children }: { activities: Act
                       <div className="w-1.5 h-1.5 rounded-full shadow-sm" style={{ backgroundColor: STATUS_HEX_COLORS[activity.status] || '#d6d3d1' }} />
                       <div className="flex flex-col items-end">
                         <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap leading-none" style={{ color: STATUS_HEX_COLORS[activity.status] }}>
-                          {STATUS_LABELS[activity.status].split('\n')[1].replace('(', '').replace(')', '')}
+                          {STATUS_LABELS[activity.status]}
                         </span>
                         <span className="text-[8px] font-bold opacity-60 whitespace-nowrap leading-none mt-0.5" style={{ color: STATUS_HEX_COLORS[activity.status] }}>
-                          {STATUS_LABELS[activity.status].split('\n')[0]}
+                          {STATUS_LABELS[activity.status]}
                         </span>
                       </div>
                     </div>

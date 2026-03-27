@@ -44,6 +44,7 @@ import { VehicleRecord, Status } from './types';
 import { 
   STATUS_FLOW, 
   STATUS_LABELS, 
+  STATUS_ABBR,
   STATUS_PERCENTAGES, 
   STATUS_COLORS,
   STATUS_SOLID_COLORS,
@@ -120,6 +121,12 @@ export default function App() {
     
     return () => clearInterval(interval);
   }, [isFullScreenSummary]);
+
+  const latestDate = useMemo(() => {
+    return vehicles.length > 0 
+      ? [...new Set(vehicles.map(v => v.deliveryDate))].sort((a, b) => new Date(b as string).getTime() - new Date(a as string).getTime())[0]
+      : null;
+  }, [vehicles]);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -462,11 +469,11 @@ export default function App() {
           'Vehicle': v.vehicleNumber,
           'Status': STATUS_LABELS[v.status],
           'Remark': v.remark || '-',
-          'Check-In': v.checkIn ? new Date(v.checkIn).toLocaleTimeString() : '-',
-          'Document Received': v.invoiceReceiving ? new Date(v.invoiceReceiving).toLocaleTimeString() : '-',
-          'Checking': v.checking ? new Date(v.checking).toLocaleTimeString() : '-',
-          'Loading': v.handover ? new Date(v.handover).toLocaleTimeString() : '-',
-          'Check-Out': v.checkOut ? new Date(v.checkOut).toLocaleTimeString() : '-',
+          'Check-In': v.checkIn ? new Date(v.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+          'Document Received': v.invoiceReceiving ? new Date(v.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+          'Checking': v.checking ? new Date(v.checking).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+          'Loading': v.handover ? new Date(v.handover).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+          'Check-Out': v.checkOut ? new Date(v.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
           'Total Time': v.totalTime || '-',
           'Archived At': v.archivedAt ? new Date(v.archivedAt).toLocaleString() : '-'
         };
@@ -1038,7 +1045,7 @@ export default function App() {
       list: [
         {
           label: 'TOTAL',
-          subLabel: 'ทั้งหมด',
+          subLabel: '',
           value: total,
           icon: Activity,
           color: 'text-white',
@@ -1047,8 +1054,8 @@ export default function App() {
           percentage: 100
         },
         ...STATUS_FLOW.map(status => ({
-          label: STATUS_LABELS[status].split('\n')[1].replace('(', '').replace(')', ''),
-          subLabel: STATUS_LABELS[status].split('\n')[0],
+          label: STATUS_LABELS[status],
+          subLabel: '',
           value: statusCounts[status],
           icon: getStatusIcon(status),
           color: 'text-white',
@@ -1246,7 +1253,7 @@ export default function App() {
                   className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all"
                 >
                   <option value="All">All Status</option>
-                  {STATUS_FLOW.map(status => <option key={status} value={status}>{STATUS_LABELS[status].replace('\n', ' ')}</option>)}
+                  {STATUS_FLOW.map(status => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
                 </select>
               </div>
 
@@ -1536,7 +1543,7 @@ export default function App() {
                             <div className="h-3 w-px bg-slate-200" />
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                               <Clock size={14} className="text-indigo-500" />
-                              {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
                             </p>
                           </div>
                         );
@@ -1678,8 +1685,7 @@ export default function App() {
                                            status === 'Handover' ? <Package size={14} /> : <CheckCircle2 size={14} />}
                                         </div>
                                         <div className="flex flex-col">
-                                          <span className="text-xs font-black text-slate-700 leading-tight">{STATUS_LABELS[status].split('\n')[1].replace('(', '').replace(')', '')}</span>
-                                          <span className="text-[10px] font-bold text-slate-400 leading-tight">{STATUS_LABELS[status].split('\n')[0]}</span>
+                                          <span className="text-xs font-black text-slate-700 leading-tight">{STATUS_LABELS[status]}</span>
                                         </div>
                                       </div>
                                       <span className="text-xs font-black text-slate-900">{count} <span className="text-slate-400 font-bold ml-1">({percentage}%)</span></span>
@@ -1713,7 +1719,7 @@ export default function App() {
                                 <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                                   <th className="pb-4 px-2">Plan Load</th>
                                   {STATUS_FLOW.map(status => (
-                                    <th key={status} className="pb-4 px-2 text-center">{STATUS_LABELS[status].split('\n')[0]}</th>
+                                    <th key={status} className="pb-4 px-2 text-center">{STATUS_LABELS[status]}</th>
                                   ))}
                                   <th className="pb-4 px-2 text-center bg-slate-50 rounded-t-xl">Total</th>
                                   <th className="pb-4 px-2 text-right">Progress</th>
@@ -1998,10 +2004,7 @@ export default function App() {
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Status</span>
                         <div className={`inline-flex flex-col px-3 py-1.5 rounded-xl border ${STATUS_COLORS[vehicle.status]} border-current/10 shadow-sm`}>
                           <span className="text-xs font-black uppercase tracking-widest leading-tight">
-                            {STATUS_LABELS[vehicle.status].split('\n')[1].replace('(', '').replace(')', '')}
-                          </span>
-                          <span className="text-[10px] font-bold opacity-70 leading-tight">
-                            {STATUS_LABELS[vehicle.status].split('\n')[0]}
+                            {STATUS_LABELS[vehicle.status]}
                           </span>
                         </div>
                       </div>
@@ -2026,23 +2029,23 @@ export default function App() {
                     <div className="grid grid-cols-3 gap-y-4 gap-x-4 mb-8">
                       <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">CIN</span>
-                        <span className="text-xs font-black text-slate-700">{vehicle.checkIn ? new Date(vehicle.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                        <span className="text-xs font-black text-slate-700">{vehicle.checkIn ? new Date(vehicle.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">DOC</span>
-                        <span className="text-xs font-black text-slate-700">{vehicle.invoiceReceiving ? new Date(vehicle.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">IVR</span>
+                        <span className="text-xs font-black text-slate-700">{vehicle.invoiceReceiving ? new Date(vehicle.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">CHK</span>
-                        <span className="text-xs font-black text-slate-700">{vehicle.checking ? new Date(vehicle.checking).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                        <span className="text-xs font-black text-slate-700">{vehicle.checking ? new Date(vehicle.checking).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">LOD</span>
-                        <span className="text-xs font-black text-slate-700">{vehicle.handover ? new Date(vehicle.handover).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">HOV</span>
+                        <span className="text-xs font-black text-slate-700">{vehicle.handover ? new Date(vehicle.handover).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">COT</span>
-                        <span className="text-xs font-black text-slate-700">{vehicle.checkOut ? new Date(vehicle.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                        <span className="text-xs font-black text-slate-700">{vehicle.checkOut ? new Date(vehicle.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">EFF</span>
@@ -2394,7 +2397,7 @@ export default function App() {
                 <div className="flex items-center gap-6">
                   <div className="text-right">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Current Time</p>
-                    <p className="text-xl font-black text-slate-900 tabular-nums">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                    <p className="text-xl font-black text-slate-900 tabular-nums">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}</p>
                   </div>
                   <button 
                     onClick={() => setIsFullScreenSummary(false)}
@@ -2436,7 +2439,7 @@ export default function App() {
                                           <span className="flex h-2 w-2 rounded-full bg-red-500 animate-ping" />
                                         )}
                                       </div>
-                                      <span className="text-[10px] font-black text-slate-400 tabular-nums">{new Date(activity.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                      <span className="text-[10px] font-black text-slate-400 tabular-nums">{new Date(activity.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                                     </div>
                                     <div className="flex items-center justify-between mt-1">
                                       <div className="flex flex-col">
@@ -2445,7 +2448,7 @@ export default function App() {
                                       </div>
                                       <div className="flex items-center gap-1.5">
                                         <span className={`text-[9px] font-black ${STATUS_COLORS[activity.status].split(' ')[1]} uppercase tracking-widest`}>
-                                          {STATUS_LABELS[activity.status].split('\n')[1].replace('(', '').replace(')', '')}
+                                          {STATUS_LABELS[activity.status]}
                                         </span>
                                       </div>
                                     </div>
@@ -2528,9 +2531,9 @@ export default function App() {
                                         </div>
                                         <div className="flex flex-col min-w-0">
                                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate leading-none mb-1">
-                                            {STATUS_LABELS[status].split('\n')[0]}
+                                            {STATUS_ABBR[status]}
                                           </span>
-                                          <div className="flex items-baseline gap-1.5">
+                                          <div className="flex flex-col items-start gap-0.5">
                                             <span className="text-2xl font-black text-slate-900 leading-none">{count}</span>
                                             <span className="text-[10px] font-bold text-slate-400">({percentage}%)</span>
                                           </div>
@@ -2556,6 +2559,13 @@ export default function App() {
                         <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">
                           LIVE Queue Monitor
                         </h2>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">PLANDATE</span>
+                        <div className="text-4xl font-black text-slate-900 tracking-tighter leading-none mb-2">
+                          {latestDate || '--/--/--'}
+                        </div>
                       </div>
                       
                       <div className="h-8 w-px bg-slate-200" />
@@ -2686,10 +2696,7 @@ export default function App() {
                                         <div>
                                           <div className={`inline-flex flex-col px-4 py-2 rounded-xl border ${STATUS_COLORS[v.status]} border-current/10 shadow-sm bg-white/50`}>
                                             <span className="text-xs font-black uppercase tracking-widest leading-tight">
-                                              {STATUS_LABELS[v.status].split('\n')[1].replace('(', '').replace(')', '')}
-                                            </span>
-                                            <span className="text-[10px] font-bold opacity-70 leading-tight mt-0.5">
-                                              {STATUS_LABELS[v.status].split('\n')[0]}
+                                              {STATUS_LABELS[v.status]}
                                             </span>
                                           </div>
                                         </div>
@@ -2706,7 +2713,7 @@ export default function App() {
                                         <div className="flex items-center gap-2 text-slate-500">
                                           <Clock size={16} />
                                           <span className="text-sm font-bold tabular-nums">
-                                            {v.invoiceReceiving ? new Date(v.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                            {v.invoiceReceiving ? new Date(v.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}
                                           </span>
                                         </div>
                                         
