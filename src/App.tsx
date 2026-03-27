@@ -53,6 +53,7 @@ import {
   sortPlanLoad
 } from './constants';
 import { auth, db, handleFirestoreError, OperationType } from './firebase';
+import firebaseConfig from '../firebase-applet-config.json';
 import { 
   onAuthStateChanged, 
   signInWithPopup, 
@@ -169,10 +170,14 @@ export default function App() {
   useEffect(() => {
     async function testConnection() {
       try {
-        await getDocFromServer(doc(db, 'test', 'connection'));
+        console.log("Testing Firestore connection to database:", firebaseConfig.firestoreDatabaseId);
+        const docRef = doc(db, 'test', 'connection');
+        const docSnap = await getDocFromServer(docRef);
+        console.log("Firestore connection successful:", docSnap.exists());
       } catch (error) {
+        console.error("Firestore connection failed:", error);
         if (error instanceof Error && error.message.includes('the client is offline')) {
-          console.error("Please check your Firebase configuration.");
+          console.error("Please check your Firebase configuration. The client is offline.");
         }
       }
     }
@@ -1177,6 +1182,15 @@ export default function App() {
           <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <Truck className="w-8 h-8 text-indigo-600" />
           </div>
+          <div className="mb-6">
+            <img 
+              src="https://lh3.googleusercontent.com/d/1Cd3dVNnqheL1GtcAgomBcyylCRw7s8x-" 
+              alt="Logo" 
+              className="h-12 mx-auto object-contain"
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+            />
+          </div>
           <h1 className="text-2xl font-bold text-stone-900 mb-2">Vehicle Loading Tracker</h1>
           <p className="text-stone-500 mb-8">Please login with your Google account to access the tracker.</p>
           <button
@@ -1186,6 +1200,11 @@ export default function App() {
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
             Login with Google
           </button>
+          <div className="mt-8 pt-6 border-t border-stone-100 text-center">
+            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-[0.2em]">
+              VehicleTracker • © 2026 AFC IT Support
+            </p>
+          </div>
         </motion.div>
       </div>
     );
@@ -1207,6 +1226,13 @@ export default function App() {
                   <Truck size={28} className="animate-pulse" />
                 </div>
                 <div>
+                  <img 
+                    src="https://lh3.googleusercontent.com/d/1Cd3dVNnqheL1GtcAgomBcyylCRw7s8x-" 
+                    alt="Logo" 
+                    className="h-8 mb-2 object-contain"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                  />
                   <h1 className="text-2xl font-black tracking-tighter text-slate-900 leading-none">VEHICLE<span className="text-indigo-600">TRACKER</span></h1>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1.5">Logistics Intelligence</p>
                 </div>
@@ -2454,6 +2480,13 @@ export default function App() {
                       <Truck size={28} className="animate-pulse" />
                     </div>
                     <div>
+                      <img 
+                        src="https://lh3.googleusercontent.com/d/1Cd3dVNnqheL1GtcAgomBcyylCRw7s8x-" 
+                        alt="Logo" 
+                        className="h-10 mb-2 object-contain"
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
+                      />
                       <h1 className="text-2xl font-black tracking-tighter text-slate-900 leading-none">VEHICLE<span className="text-indigo-600">TRACKER</span> MONITOR</h1>
                       <div className="flex items-center gap-3 mt-1.5">
                         <div className="flex items-center gap-1.5">
@@ -2846,6 +2879,11 @@ export default function App() {
                   </div>
                 </div>
               </main>
+              <footer className="px-8 py-4 bg-white border-t border-slate-200 flex items-center justify-center shrink-0">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                  VehicleTracker • © 2026 AFC IT Support
+                </p>
+              </footer>
             </motion.div>
           );
         })()}
