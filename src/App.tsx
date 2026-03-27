@@ -1180,7 +1180,7 @@ export default function App() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center"
         >
-          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 bg-indigo-100 hexagon flex items-center justify-center mx-auto mb-6">
             <Truck className="w-8 h-8 text-indigo-600" />
           </div>
           <div className="mb-6">
@@ -1192,7 +1192,9 @@ export default function App() {
               crossOrigin="anonymous"
             />
           </div>
-          <h1 className="text-2xl font-bold text-stone-900 mb-2">Vehicle Loading Tracker</h1>
+          <h1 className="text-3xl font-black tracking-tighter text-slate-900 leading-none mb-2">
+            VEHICLE<span className="text-indigo-600">TRACKER</span>
+          </h1>
           <p className="text-stone-500 mb-8">Please login with your Google account to access the tracker.</p>
           <button
             onClick={handleLogin}
@@ -1223,7 +1225,7 @@ export default function App() {
             {/* Logo & Search */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-8 flex-1">
               <div className="flex items-center gap-4">
-                <div className="bg-indigo-600 w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100 shrink-0">
+                <div className="bg-indigo-600 w-14 h-14 hexagon flex items-center justify-center text-white shadow-xl shadow-indigo-100 shrink-0">
                   <Truck size={28} className="animate-pulse" />
                 </div>
                 <div>
@@ -1235,7 +1237,7 @@ export default function App() {
                     crossOrigin="anonymous"
                   />
                   <h1 className="text-2xl font-black tracking-tighter text-slate-900 leading-none">VEHICLE<span className="text-indigo-600">TRACKER</span></h1>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1.5">Logistics Intelligence</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1.5">WE DESIGN LOGISTICS</p>
                 </div>
               </div>
 
@@ -2325,7 +2327,7 @@ export default function App() {
                     {archivedVehicles.map((v) => (
                       <div key={v.id} className="bg-stone-50 rounded-2xl p-4 border border-stone-100 flex items-center justify-between group hover:border-indigo-200 transition-all">
                         <div className="flex items-center gap-4">
-                          <div className="bg-white p-3 rounded-xl shadow-sm border border-stone-100">
+                          <div className="bg-white w-12 h-12 hexagon shadow-sm border border-stone-100 flex items-center justify-center shrink-0">
                             <Truck className="text-stone-400" size={20} />
                           </div>
                           <div>
@@ -2477,7 +2479,7 @@ export default function App() {
               <header className="px-8 py-6 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-sm z-10">
                 <div className="flex items-center gap-8">
                   <div className="flex items-center gap-4">
-                    <div className="bg-indigo-600 w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/20 shrink-0">
+                    <div className="bg-indigo-600 w-14 h-14 hexagon flex items-center justify-center text-white shadow-xl shadow-indigo-500/20 shrink-0">
                       <Truck size={28} className="animate-pulse" />
                     </div>
                     <div>
@@ -2495,7 +2497,7 @@ export default function App() {
                           <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">ONLINE</span>
                         </div>
                         <div className="h-3 w-px bg-slate-200" />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Logistics Intelligence</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">WE DESIGN LOGISTICS</span>
                       </div>
                     </div>
                   </div>
@@ -2769,7 +2771,7 @@ export default function App() {
                               exit={{ opacity: 0 }}
                               className="h-full flex flex-col items-center justify-center text-slate-700 space-y-8"
                             >
-                              <div className="w-32 h-32 bg-slate-900 rounded-full flex items-center justify-center text-slate-800 border border-slate-800">
+                              <div className="w-32 h-32 bg-slate-900 hexagon flex items-center justify-center text-slate-800 border border-slate-800">
                                 <Truck size={64} strokeWidth={1} />
                               </div>
                               <p className="text-2xl font-black uppercase tracking-[0.3em]">No Active Operations</p>

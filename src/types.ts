@@ -9,7 +9,7 @@ export interface Warehouse {
 
 export interface VehicleRecord {
   id: string;
-  warehouseId: string;
+  warehouseId?: string;
   seqLoading: number;
   deliveryDate: string;
   tripC: string;
