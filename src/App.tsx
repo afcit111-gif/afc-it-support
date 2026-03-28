@@ -140,6 +140,7 @@ export default function App() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showArchiveHistory, setShowArchiveHistory] = useState(false);
+  const [archiveSearchTerm, setArchiveSearchTerm] = useState('');
   const [editingVehicle, setEditingVehicle] = useState<VehicleRecord | null>(null);
   const [metricsView, setMetricsView] = useState<'overview' | 'efficiency'>('overview');
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
@@ -355,10 +356,13 @@ export default function App() {
       await updateDoc(doc(db, 'vehicles', editingVehicle.id), {
         driverName: editingVehicle.driverName,
         driverPhone: editingVehicle.driverPhone,
+        deliveryDate: editingVehicle.deliveryDate,
+        tripCode: editingVehicle.tripCode || '',
+        trip: editingVehicle.trip || '',
         sub: editingVehicle.sub || 'Other',
         remark: newRemark
       });
-      showToast('Driver details updated successfully', 'success');
+      showToast('Trip details updated successfully', 'success');
       setEditingVehicle(null);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `vehicles/${editingVehicle.id}`);
@@ -1523,7 +1527,7 @@ export default function App() {
                   <div className="bg-stone-900 p-2 rounded-lg text-white">
                     <Edit2 size={20} />
                   </div>
-                  <h2 className="text-xl font-bold">Edit Driver Details</h2>
+                  <h2 className="text-xl font-bold">Edit Trip Details</h2>
                 </div>
                 <button 
                   onClick={() => setEditingVehicle(null)}
@@ -1566,6 +1570,16 @@ export default function App() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Trip Number</label>
+                  <input
+                    type="text"
+                    value={editingVehicle.trip || ''}
+                    onChange={e => setEditingVehicle({...editingVehicle, trip: e.target.value})}
+                    className="w-full p-3 bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    placeholder="e.g. T123"
+                  />
+                </div>
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Vehicle Number *</label>
                   <input
                     type="text"
@@ -1577,7 +1591,7 @@ export default function App() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Delivery Date</label>
+                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Plan Date</label>
                   <input
                     type="date"
                     value={editingVehicle.deliveryDate || ''}
@@ -2420,13 +2434,28 @@ export default function App() {
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={14} />
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      className="bg-white border border-stone-200 rounded-xl py-2 pl-9 pr-4 text-xs font-bold text-stone-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      value={archiveSearchTerm}
+                      onChange={(e) => setArchiveSearchTerm(e.target.value)}
+                    />
+                  </div>
 
                   <div className="flex items-center gap-2">
                     {archivedVehicles.length > 0 && (
                       <>
                         <button
                           onClick={() => {
-                            const dates = [...new Set(archivedVehicles.map(v => v.deliveryDate))].sort().reverse();
+                            const filtered = archivedVehicles.filter(v => 
+                              v.vehicleNumber.toLowerCase().includes(archiveSearchTerm.toLowerCase()) ||
+                              v.driverName.toLowerCase().includes(archiveSearchTerm.toLowerCase()) ||
+                              (v.tripC || '').toLowerCase().includes(archiveSearchTerm.toLowerCase())
+                            );
+                            const dates = [...new Set(filtered.map(v => v.deliveryDate))].sort().reverse();
                             setConfirm({
                               title: 'Confirm Restore',
                               icon: <Archive size={32} />,
@@ -2434,7 +2463,7 @@ export default function App() {
                               showRemarkInput: true,
                               onConfirm: async (selectedDate?: string) => {
                                 const dateToRestore = selectedDate || dates[0];
-                                const toRestore = archivedVehicles.filter(v => v.deliveryDate === dateToRestore);
+                                const toRestore = filtered.filter(v => v.deliveryDate === dateToRestore);
                                 
                                 if (toRestore.length === 0) {
                                   showToast('No records found for this date');
@@ -2463,11 +2492,22 @@ export default function App() {
                           <Archive size={14} /> Restore by Date
                         </button>
                         <button
-                          onClick={() => handleExportExcel(archivedVehicles, 'Archived_Vehicles_Export')}
+                          onClick={() => {
+                            const filtered = archivedVehicles.filter(v => 
+                              v.vehicleNumber.toLowerCase().includes(archiveSearchTerm.toLowerCase()) ||
+                              v.driverName.toLowerCase().includes(archiveSearchTerm.toLowerCase()) ||
+                              (v.tripC || '').toLowerCase().includes(archiveSearchTerm.toLowerCase())
+                            );
+                            handleExportExcel(filtered, 'Archived_Vehicles_Export');
+                          }}
                           className="flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-2 rounded-xl text-[11px] font-bold hover:bg-emerald-700 transition-colors"
                         >
                           <Download size={14} />
-                          Export ({archivedVehicles.length})
+                          Export ({archivedVehicles.filter(v => 
+                              v.vehicleNumber.toLowerCase().includes(archiveSearchTerm.toLowerCase()) ||
+                              v.driverName.toLowerCase().includes(archiveSearchTerm.toLowerCase()) ||
+                              (v.tripC || '').toLowerCase().includes(archiveSearchTerm.toLowerCase())
+                            ).length})
                         </button>
                       </>
                     )}
@@ -2482,7 +2522,11 @@ export default function App() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6">
-                {archivedVehicles.length === 0 ? (
+                {archivedVehicles.filter(v => 
+                  v.vehicleNumber.toLowerCase().includes(archiveSearchTerm.toLowerCase()) ||
+                  v.driverName.toLowerCase().includes(archiveSearchTerm.toLowerCase()) ||
+                  (v.tripC || '').toLowerCase().includes(archiveSearchTerm.toLowerCase())
+                ).length === 0 ? (
                   <div className="text-center py-20">
                     <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-400">
                       <History size={32} />
@@ -2491,7 +2535,11 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {archivedVehicles.map((v) => (
+                    {archivedVehicles.filter(v => 
+                      v.vehicleNumber.toLowerCase().includes(archiveSearchTerm.toLowerCase()) ||
+                      v.driverName.toLowerCase().includes(archiveSearchTerm.toLowerCase()) ||
+                      (v.tripC || '').toLowerCase().includes(archiveSearchTerm.toLowerCase())
+                    ).map((v) => (
                       <div key={v.id} className="bg-stone-50 rounded-2xl p-4 border border-stone-100 flex items-center justify-between group hover:border-indigo-200 transition-all">
                         <div className="flex items-center gap-4">
                           <div className="bg-white w-12 h-12 hexagon shadow-sm border border-stone-100 flex items-center justify-center shrink-0">
