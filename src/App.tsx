@@ -35,7 +35,8 @@ import {
   Edit2,
   Package,
   Loader2,
-  RotateCcw
+  RotateCcw,
+  FileCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as XLSX from 'xlsx';
@@ -294,6 +295,35 @@ export default function App() {
     }
   };
 
+  const handleToggleInvoiceCompleted = async (vehicle: VehicleRecord) => {
+    if (!user || vehicle.invoiceCompleted) return;
+    
+    try {
+      const batch = writeBatch(db);
+      const newValue = new Date().toISOString();
+      
+      // Update all vehicles in the same trip and delivery date
+      const tripVehicles = vehicles.filter(v => 
+        v.tripC === vehicle.tripC && 
+        v.deliveryDate === vehicle.deliveryDate
+      );
+      
+      if (tripVehicles.length === 0 || !vehicle.tripC) {
+        batch.update(doc(db, 'vehicles', vehicle.id), { invoiceCompleted: newValue });
+      } else {
+        tripVehicles.forEach(v => {
+          batch.update(doc(db, 'vehicles', v.id), { invoiceCompleted: newValue });
+        });
+      }
+      
+      await batch.commit();
+      showToast(`Invoice marked as completed for trip ${vehicle.tripC || vehicle.trip}`, 'success');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'vehicles');
+      showToast('Failed to update invoice status', 'error');
+    }
+  };
+
   const handleEditDriver = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingVehicle) return;
@@ -464,24 +494,25 @@ export default function App() {
         const qNum = vehicleQueues[v.id];
         
         return {
-          'Seq': v.seqLoading,
-          'Delivery Date': v.deliveryDate,
-          'Trip': v.trip,
-          'Sub': v.sub,
-          'Plan Load': v.planLoad,
-          'Queue': qNum || '-',
-          'Driver': v.driverName,
-          'Phone': v.driverPhone,
-          'Vehicle': v.vehicleNumber,
-          'Status': STATUS_LABELS[v.status],
-          'Remark': v.remark || '-',
-          'Check-In': v.checkIn ? new Date(v.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
-          'Document Received': v.invoiceReceiving ? new Date(v.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
-          'Checking': v.checking ? new Date(v.checking).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
-          'Loading': v.handover ? new Date(v.handover).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
-          'Check-Out': v.checkOut ? new Date(v.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
-          'Total Time': v.totalTime || '-',
-          'Archived At': v.archivedAt ? new Date(v.archivedAt).toLocaleString() : '-'
+          'SEQ': v.seqLoading,
+          'DELIVERY_DATE': v.deliveryDate,
+          'TRIP_NUBMER': v.trip,
+          'SUB': v.sub,
+          'PLANLOAD': v.planLoad,
+          'QUEUE': qNum || '-',
+          'DRIVER_NAME': v.driverName,
+          'PHONE_NUMBER': v.driverPhone,
+          'VEHICLE_NUMBER': v.vehicleNumber,
+          'STATUS': STATUS_LABELS[v.status],
+          'REMARK': v.remark || '-',
+          'CHECK-IN': v.checkIn ? new Date(v.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+          'INVOICE_COMPLETED': v.invoiceCompleted ? new Date(v.invoiceCompleted).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+          'INVOICE_RECEIVING': v.invoiceReceiving ? new Date(v.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+          'CHECKING': v.checking ? new Date(v.checking).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+          'HANDOVER': v.handover ? new Date(v.handover).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+          'CHECK_OUT': v.checkOut ? new Date(v.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+          'TURNAROUND_TIME': v.totalTime || '-',
+          'ARCHIVED_AT': v.archivedAt ? new Date(v.archivedAt).toLocaleString() : '-'
         };
       });
 
@@ -626,21 +657,21 @@ export default function App() {
       const uploadTimestamp = new Date().toISOString();
 
       const newRecords: VehicleRecord[] = data.map((row, index) => {
-        const planLoad = formatExcelTime(row['Plan Load']);
-        const vehiclePlan = formatExcelTime(row['Vehicle Plan'] || row['Plan Load']);
-        const seq = row['Seq'] || row['Seq Loading'];
+        const planLoad = formatExcelTime(row['PLANLOAD'] || row['Plan Load'] || row['Plan:รถเข้ามาโหลด']);
+        const vehiclePlan = formatExcelTime(row['Vehicle Plan'] || row['PLANLOAD'] || row['Plan Load'] || row['Plan:รถเข้ามาโหลด']);
+        const seq = row['SEQ'] || row['Seq'] || row['Seq Loading'];
         
         return {
           id: `v-${Date.now()}-${index}`,
           seqLoading: typeof seq === 'number' ? seq : (parseInt(seq) || index + 1),
-          deliveryDate: formatExcelDate(row['Delivery Date']),
-          tripC: row['Trip C'] || '',
-          trip: row['Trip'] || '',
-          sub: row['Sub'] || '',
+          deliveryDate: formatExcelDate(row['DELIVERY_DATE'] || row['Delivery Date']), // formatExcelDate defaults to today if empty
+          tripC: row['TRIP_C'] || row['Trip C'] || '',
+          trip: row['TRIP_NUMBER'] || row['TRIP_NUBMER'] || row['Trip'] || '',
+          sub: row['SUB'] || row['Sub'] || '',
           planLoad: planLoad,
-          driverName: row['Driver Name'] || '',
-          driverPhone: cleanInput(row['Driver Phone'] || ''),
-          vehicleNumber: cleanInput(row['Vehicle Number'] || ''),
+          driverName: row['DRIVER_NAME'] || row['Driver name2'] || row['Driver Name'] || '',
+          driverPhone: cleanInput(row['PHONE_NUMBER'] || row['Phone number'] || row['Driver Phone'] || ''),
+          vehicleNumber: cleanInput(row['VEHICLE_NUMBER'] || row['Vehicle Number'] || ''),
           vehicleSub: row['Vehicle Sub'] || '',
           vehiclePlan: vehiclePlan,
           status: 'Waiting',
@@ -726,18 +757,16 @@ export default function App() {
 
   const downloadTemplate = () => {
     const template = [{
-      'Seq Loading': 1,
-      'Delivery Date': '2026-03-21',
-      'Trip C': 'C1',
-      'Trip': 'Trip 1',
-      'Sub': 'Ezie',
-      'Plan Load': '18:30',
-      'Driver Name': 'John Doe',
-      'Driver Phone': '0812345678',
-      'Vehicle Number': 'กข1234',
-      'Vehicle Sub': 'Sub 1',
-      'Vehicle Plan': '18:30',
-      'Remark': ''
+      'SEQ': 1,
+      'TRIP_C': 'C1',
+      'TRIP_NUMBER': 'Trip 1',
+      'DRIVER_NAME': 'John Doe',
+      'PHONE_NUMBER': '0812345678',
+      'VEHICLE_NUMBER': 'กข1234',
+      'SUB': 'Sub 1',
+      'PLANLOAD': '18:30',
+      'DRIVER_NAME / PHONE_NUMBER': 'John Doe / 0812345678',
+      'VEHICLE_NUMBER / SUB / PLANLOAD': 'กข1234 / Sub 1 / 18:30'
     }];
     const ws = XLSX.utils.json_to_sheet(template);
     const wb = XLSX.utils.book_new();
@@ -948,7 +977,11 @@ export default function App() {
       
       const matchesSub = subFilter === 'All' || v.sub === subFilter;
       const matchesTime = timeFilter === 'All' || v.planLoad === timeFilter;
-      const matchesStatus = statusFilter === 'All' || v.status === statusFilter;
+      const matchesStatus = statusFilter === 'All' 
+        ? true 
+        : statusFilter === 'Invoice Completed' 
+          ? !!v.invoiceCompleted 
+          : v.status === statusFilter;
       const matchesDate = dateFilter === 'All' || v.deliveryDate === dateFilter;
 
       return matchesSearch && matchesSub && matchesTime && matchesStatus && matchesDate;
@@ -1237,7 +1270,7 @@ export default function App() {
                     crossOrigin="anonymous"
                   />
                   <h1 className="text-2xl font-black tracking-tighter text-slate-900 leading-none">VEHICLE<span className="text-indigo-600">TRACKER</span></h1>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1.5">WE DESIGN LOGISTICS</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1.5">Logistics Intelligence</p>
                 </div>
               </div>
 
@@ -1249,11 +1282,9 @@ export default function App() {
                       <s.icon size={16} className={s.label === 'TOTAL' ? 'text-white' : STATUS_COLORS[STATUS_FLOW[i - 1]]?.split(' ')[1]} />
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-base xl:text-lg font-black text-slate-900 leading-none">{s.value}</span>
-                        <span className="text-[8px] xl:text-[9px] font-bold text-slate-400 leading-none">({s.percentage}%)</span>
-                      </div>
-                      <div className="flex flex-col mt-0.5">
+                      <span className="text-base xl:text-lg font-black text-slate-900 leading-none">{s.value}</span>
+                      <div className="flex flex-col mt-1">
+                        <span className="text-[8px] xl:text-[9px] font-bold text-slate-400 leading-none mb-0.5">({s.percentage}%)</span>
                         <span className="text-[7px] xl:text-[8px] font-black text-slate-500 uppercase tracking-wider leading-none truncate">{s.label}</span>
                         <span className="text-[7px] font-bold text-slate-300 leading-none mt-0.5 truncate">{s.subLabel}</span>
                       </div>
@@ -1358,6 +1389,7 @@ export default function App() {
                   className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all"
                 >
                   <option value="All">All Status</option>
+                  <option value="Invoice Completed">Invoice Completed</option>
                   {STATUS_FLOW.map(status => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
                 </select>
               </div>
@@ -2062,6 +2094,20 @@ export default function App() {
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vehicle</span>
                         </div>
                         <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none">{vehicle.vehicleNumber}</h3>
+                        {(() => {
+                          const tatMins = getTurnaroundTime(vehicle.checkIn, vehicle.checkOut);
+                          if (tatMins !== null) {
+                            return (
+                              <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200">
+                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">TAT</span>
+                                <span className={`text-xs font-black ${vehicle.checkOut ? 'text-emerald-600' : 'text-red-600'}`}>
+                                  {formatEfficiency(tatMins)}
+                                </span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -2159,6 +2205,10 @@ export default function App() {
                         <span className="text-xs font-black text-slate-700">{vehicle.checkIn ? new Date(vehicle.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
                       <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">IVC</span>
+                        <span className="text-xs font-black text-slate-700">{vehicle.invoiceCompleted ? new Date(vehicle.invoiceCompleted).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
+                      </div>
+                      <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">IVR</span>
                         <span className="text-xs font-black text-slate-700">{vehicle.invoiceReceiving ? new Date(vehicle.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
@@ -2174,22 +2224,23 @@ export default function App() {
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">COT</span>
                         <span className="text-xs font-black text-slate-700">{vehicle.checkOut ? new Date(vehicle.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">TAT</span>
-                        {(() => {
-                          const tatMins = getTurnaroundTime(vehicle.checkIn, vehicle.checkOut);
-                          if (tatMins === null) return <span className="text-xs font-black text-slate-300">N/A</span>;
-                          return (
-                            <span className={`text-xs font-black ${vehicle.checkOut ? 'text-emerald-500' : 'text-red-500'}`}>
-                              {formatEfficiency(tatMins)}
-                            </span>
-                          );
-                        })()}
-                      </div>
                     </div>
 
                     {/* Action Button */}
-                    <div className="mt-auto">
+                    <div className="mt-auto flex flex-col gap-2">
+                      <button 
+                        onClick={() => handleToggleInvoiceCompleted(vehicle)}
+                        disabled={!!vehicle.invoiceCompleted}
+                        className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-all border ${
+                          vehicle.invoiceCompleted 
+                            ? 'bg-emerald-500 text-white border-emerald-600 cursor-not-allowed shadow-sm' 
+                            : 'bg-red-500 text-white border-red-600 hover:bg-red-600 shadow-sm hover:shadow-md active:scale-[0.98]'
+                        }`}
+                      >
+                        <FileCheck size={18} />
+                        <span>{vehicle.invoiceCompleted ? 'Invoice Completed' : 'Mark: Invoice Completed'}</span>
+                      </button>
+
                       {vehicle.status !== 'Check Out' ? (
                         <button 
                           onClick={() => handleStatusUpdate(vehicle.id, vehicle.status)}
@@ -2457,6 +2508,7 @@ export default function App() {
           const recentActivities = latestVehicles.flatMap(v => {
             const activities = [];
             if (v.checkIn) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.tripC || '', sub: v.sub || '', status: 'Check In' as Status, time: new Date(v.checkIn).getTime(), timeString: v.checkIn });
+            if (v.invoiceCompleted) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.tripC || '', sub: v.sub || '', status: 'Invoice Completed' as Status, time: new Date(v.invoiceCompleted).getTime(), timeString: v.invoiceCompleted });
             if (v.invoiceReceiving) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.tripC || '', sub: v.sub || '', status: 'Invoice Receiving' as Status, time: new Date(v.invoiceReceiving).getTime(), timeString: v.invoiceReceiving });
             if (v.checking) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.tripC || '', sub: v.sub || '', status: 'Checking' as Status, time: new Date(v.checking).getTime(), timeString: v.checking });
             if (v.handover) activities.push({ vehicleNumber: v.vehicleNumber, driverName: v.driverName, trip: v.tripC || '', sub: v.sub || '', status: 'Handover' as Status, time: new Date(v.handover).getTime(), timeString: v.handover });
@@ -2497,7 +2549,7 @@ export default function App() {
                           <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">ONLINE</span>
                         </div>
                         <div className="h-3 w-px bg-slate-200" />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">WE DESIGN LOGISTICS</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Logistics Intelligence</span>
                       </div>
                     </div>
                   </div>
@@ -2513,11 +2565,9 @@ export default function App() {
                             <s.icon size={20} className="text-white" />
                           </div>
                           <div className="flex flex-col">
-                            <div className="flex items-baseline gap-1.5">
-                              <span className="text-xl font-black text-slate-900 leading-none">{s.value}</span>
-                              <span className="text-[10px] font-bold text-slate-400 leading-none">({s.percentage}%)</span>
-                            </div>
+                            <span className="text-xl font-black text-slate-900 leading-none">{s.value}</span>
                             <div className="flex flex-col mt-1">
+                              <span className="text-[10px] font-bold text-slate-400 leading-none mb-1">({s.percentage}%)</span>
                               <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider leading-none">{s.label}</span>
                               <span className="text-[8px] font-bold text-slate-300 leading-none mt-0.5">{s.subLabel}</span>
                             </div>
@@ -2791,12 +2841,12 @@ export default function App() {
                             className="w-full h-full flex flex-col"
                           >
                             {/* Table Header - Stays fixed at top */}
-                            <div className="z-10 bg-slate-900 text-white grid grid-cols-[80px_1fr_2fr_1.5fr_2fr_140px_120px] gap-6 px-10 py-5 text-[11px] font-black uppercase tracking-[0.25em] border-b border-slate-800 shrink-0">
-                              <div>Queue</div>
+                            <div className="z-10 bg-slate-900 text-white grid grid-cols-[110px_1fr_2fr_1.5fr_2fr_140px_120px] gap-6 px-10 py-5 text-[11px] font-black uppercase tracking-[0.25em] border-b border-slate-800 shrink-0">
+                              <div className="pl-[52px]">Queue</div>
                               <div>Vehicle</div>
                               <div>Driver</div>
                               <div>Status</div>
-                              <div>Trip Number & Trip</div>
+                              <div>Trip Number</div>
                               <div>Turnaround Time</div>
                               <div>Last Updated</div>
                             </div>
@@ -2814,15 +2864,24 @@ export default function App() {
                                     return (
                                       <div 
                                         key={v.id} 
-                                        className={`grid grid-cols-[80px_1fr_2fr_1.5fr_2fr_140px_120px] gap-6 px-10 py-6 items-center transition-colors hover:bg-indigo-50/30 ${isCheckOut ? 'bg-emerald-50/40' : idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                                        className={`grid grid-cols-[110px_1fr_2fr_1.5fr_2fr_140px_120px] gap-6 px-10 py-6 items-center transition-colors hover:bg-indigo-50/30 ${isCheckOut ? 'bg-emerald-50/40' : idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                                       >
-                                        <div className={`w-14 h-14 rounded-xl ${STATUS_SOLID_COLORS[v.status]} text-white flex flex-col items-center justify-center shadow-md`}>
-                                          <span className="text-[10px] font-black opacity-70 leading-none mb-1">
-                                            {v.invoiceReceiving ? new Date(v.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--'}
-                                          </span>
-                                          <span className="text-2xl font-black leading-none">
-                                            {vehicleQueues[v.id] || '-'}
-                                          </span>
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+                                            {v.invoiceCompleted && (
+                                              <div className="flex items-center justify-center w-full h-full rounded-full bg-emerald-100 text-emerald-600 shadow-sm border border-emerald-200" title="Invoice Completed">
+                                                <FileCheck size={20} />
+                                              </div>
+                                            )}
+                                          </div>
+                                          <div className={`w-14 h-14 rounded-xl ${STATUS_SOLID_COLORS[v.status]} text-white flex flex-col items-center justify-center shadow-md shrink-0`}>
+                                            <span className="text-[10px] font-black opacity-70 leading-none mb-1">
+                                              {v.planLoad || '--:--'}
+                                            </span>
+                                            <span className="text-2xl font-black leading-none">
+                                              {vehicleQueues[v.id] || '-'}
+                                            </span>
+                                          </div>
                                         </div>
                                         
                                         <div className="flex flex-col">

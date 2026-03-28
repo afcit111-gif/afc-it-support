@@ -1,4 +1,4 @@
-export type Status = 'Waiting' | 'Check In' | 'Invoice Receiving' | 'Checking' | 'Handover' | 'Check Out';
+export type Status = 'Waiting' | 'Check In' | 'Invoice Completed' | 'Invoice Receiving' | 'Checking' | 'Handover' | 'Check Out';
 
 export interface Warehouse {
   id: string;
@@ -27,6 +27,7 @@ export interface VehicleRecord {
   checking?: string;
   handover?: string;
   checkOut?: string;
+  invoiceCompleted?: string | null;
   totalTime?: string;
   percentage: number;
   remark: string;

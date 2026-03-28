@@ -5,6 +5,7 @@ export const STATUS_FLOW: Status[] = ['Waiting', 'Check In', 'Invoice Receiving'
 export const STATUS_LABELS: Record<Status, string> = {
   'Waiting': 'Waiting',
   'Check In': 'Check In',
+  'Invoice Completed': 'Invoice Completed',
   'Invoice Receiving': 'Invoice Receiving',
   'Checking': 'Checking',
   'Handover': 'Handover',
@@ -14,6 +15,7 @@ export const STATUS_LABELS: Record<Status, string> = {
 export const STATUS_ABBR: Record<Status, string> = {
   'Waiting': 'WTG',
   'Check In': 'CIN',
+  'Invoice Completed': 'IVC',
   'Invoice Receiving': 'IVR',
   'Checking': 'CHK',
   'Handover': 'HOV',
@@ -23,6 +25,7 @@ export const STATUS_ABBR: Record<Status, string> = {
 export const STATUS_THAI_LABELS: Record<Status, string> = {
   'Waiting': 'รอดำเนินการ',
   'Check In': 'เข้าพื้นที่',
+  'Invoice Completed': 'เอกสารพร้อม',
   'Invoice Receiving': 'รับเอกสาร',
   'Checking': 'ตรวจสอบสินค้า',
   'Handover': 'ส่งมอบสินค้า',
@@ -32,6 +35,7 @@ export const STATUS_THAI_LABELS: Record<Status, string> = {
 export const STATUS_PERCENTAGES: Record<Status, number> = {
   'Waiting': 0,
   'Check In': 20,
+  'Invoice Completed': 30,
   'Invoice Receiving': 40,
   'Checking': 60,
   'Handover': 80,
@@ -41,6 +45,7 @@ export const STATUS_PERCENTAGES: Record<Status, number> = {
 export const STATUS_COLORS: Record<Status, string> = {
   'Waiting': 'bg-blue-100 text-blue-700',
   'Check In': 'bg-red-100 text-red-700',
+  'Invoice Completed': 'bg-teal-100 text-teal-700',
   'Invoice Receiving': 'bg-orange-100 text-orange-700',
   'Checking': 'bg-amber-100 text-amber-700',
   'Handover': 'bg-lime-100 text-lime-700',
@@ -50,6 +55,7 @@ export const STATUS_COLORS: Record<Status, string> = {
 export const STATUS_SOLID_COLORS: Record<Status, string> = {
   'Waiting': 'bg-blue-600',
   'Check In': 'bg-red-600',
+  'Invoice Completed': 'bg-teal-600',
   'Invoice Receiving': 'bg-orange-600',
   'Checking': 'bg-amber-600',
   'Handover': 'bg-lime-600',
@@ -59,6 +65,7 @@ export const STATUS_SOLID_COLORS: Record<Status, string> = {
 export const STATUS_HEX_COLORS: Record<Status, string> = {
   'Waiting': '#2563eb',
   'Check In': '#dc2626',
+  'Invoice Completed': '#0d9488',
   'Invoice Receiving': '#ea580c',
   'Checking': '#d97706',
   'Handover': '#65a30d',
