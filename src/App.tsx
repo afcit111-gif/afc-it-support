@@ -1,6 +1,4 @@
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Monitor as MonitorComponent } from './Monitor';
 import { 
   Search, 
   Filter, 
@@ -101,11 +99,6 @@ export default function App() {
   const [isFullScreenSummary, setIsFullScreenSummary] = useState(false);
   const [dashboardPlanFilter, setDashboardPlanFilter] = useState('All');
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
-  const location = useLocation();
-
-  if (location.pathname === '/monitor') return <MonitorComponent mode="tv" vehicles={vehicles} user={user} />;
-  if (location.pathname === '/monitor-mobile') return <MonitorComponent mode="mobile" vehicles={vehicles} user={user} />;
-
   const summaryRef = useRef<HTMLDivElement>(null);
   const handOverRef = useRef<HTMLDivElement>(null);
   const dashboardScrollRef = useRef<HTMLDivElement>(null);
@@ -1358,9 +1351,9 @@ export default function App() {
               <div className="flex items-center bg-slate-100 p-1.5 rounded-2xl">
                 <button
                   onClick={() => setShowSummary(true)}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-white hover:shadow-sm transition-all text-slate-700 whitespace-nowrap"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold hover:bg-white hover:shadow-sm transition-all text-slate-700 whitespace-nowrap"
                 >
-                  <BarChart3 size={16} className="text-indigo-600" />
+                  <BarChart3 size={14} className="text-indigo-600" />
                   Summary
                 </button>
               </div>
@@ -1469,9 +1462,9 @@ export default function App() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+                className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
               >
-                <Plus size={16} />
+                <Plus size={14} />
                 Add Vehicle
               </button>
               
@@ -1777,7 +1770,7 @@ export default function App() {
                   </button>
                   <button 
                     onClick={handleAddManual}
-                    className="bg-stone-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-stone-800 transition-all shadow-lg shadow-stone-200"
+                    className="bg-stone-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-stone-800 transition-all shadow-lg shadow-stone-200 text-sm"
                   >
                     Add Vehicle
                   </button>
@@ -1827,9 +1820,9 @@ export default function App() {
                   <div className="flex items-center gap-3">
                     <button 
                       onClick={() => setIsFullScreenSummary(true)} 
-                      className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-95"
+                      className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-95"
                     >
-                      <Monitor size={16} />
+                      <Monitor size={14} />
                       Dashboard Mode
                     </button>
                     <button 
@@ -2324,7 +2317,7 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden mb-6 shadow-inner">
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden mb-4 shadow-inner">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${vehicle.percentage}%` }}
@@ -2334,6 +2327,20 @@ export default function App() {
                         }`}
                       />
                     </div>
+
+                    {/* Mark Invoice Button - Moved here */}
+                    <button 
+                      onClick={() => handleToggleInvoiceCompleted(vehicle)}
+                      disabled={!!vehicle.invoiceCompleted}
+                      className={`w-full flex items-center justify-center gap-2 py-2.5 mb-6 rounded-2xl text-sm font-black transition-all border ${
+                        vehicle.invoiceCompleted 
+                          ? 'bg-emerald-500 text-white border-emerald-600 cursor-not-allowed shadow-sm' 
+                          : 'bg-red-500 text-white border-red-600 hover:bg-red-600 shadow-sm hover:shadow-md active:scale-[0.98]'
+                      }`}
+                    >
+                      <FileCheck size={18} />
+                      <span>{vehicle.invoiceCompleted ? 'Invoice Completed' : 'Mark: Invoice Completed'}</span>
+                    </button>
 
                     {/* Timestamps Grid */}
                     <div className="grid grid-cols-3 gap-y-4 gap-x-4 mb-8">
@@ -2365,19 +2372,6 @@ export default function App() {
 
                     {/* Action Button */}
                     <div className="mt-auto flex flex-col gap-2">
-                      <button 
-                        onClick={() => handleToggleInvoiceCompleted(vehicle)}
-                        disabled={!!vehicle.invoiceCompleted}
-                        className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-all border ${
-                          vehicle.invoiceCompleted 
-                            ? 'bg-emerald-500 text-white border-emerald-600 cursor-not-allowed shadow-sm' 
-                            : 'bg-red-500 text-white border-red-600 hover:bg-red-600 shadow-sm hover:shadow-md active:scale-[0.98]'
-                        }`}
-                      >
-                        <FileCheck size={18} />
-                        <span>{vehicle.invoiceCompleted ? 'Invoice Completed' : 'Mark: Invoice Completed'}</span>
-                      </button>
-
                       {vehicle.status !== 'Check Out' ? (
                         <button 
                           onClick={() => handleStatusUpdate(vehicle.id, vehicle.status)}
@@ -2753,9 +2747,9 @@ export default function App() {
                   </div>
                   <button 
                     onClick={() => setIsFullScreenSummary(false)}
-                    className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-800 transition-all flex items-center gap-2 shadow-xl active:scale-95 text-sm"
+                    className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black hover:bg-slate-800 transition-all flex items-center gap-2 shadow-xl active:scale-95 text-xs"
                   >
-                    <Minimize2 size={18} />
+                    <Minimize2 size={16} />
                     Exit Monitor
                   </button>
                 </div>
@@ -2830,7 +2824,7 @@ export default function App() {
                           const activePlanGroups = [...new Set(monitorFilteredVehicles.map(v => `${v.deliveryDate}|${v.planLoad}`))].sort();
                           if (activePlanGroups.length === 0) return null;
                           const safeIndex = currentRoundIndex % activePlanGroups.length;
-                          const [date, plan] = ((activePlanGroups[safeIndex] as string) || '').split('|');
+                          const [date, plan] = (activePlanGroups[safeIndex] as string).split('|');
                           const vehiclesInPlan = monitorFilteredVehicles.filter(v => `${v.deliveryDate}|${v.planLoad}` === activePlanGroups[safeIndex]);
                           const completed = vehiclesInPlan.filter(v => v.status === 'Check Out').length;
                           const total = vehiclesInPlan.length;
@@ -2968,6 +2962,23 @@ export default function App() {
                             </div>
                           );
                         })()}
+                      </div>
+
+                      <div className="h-8 w-px bg-slate-200" />
+
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">IVC COMPLETED</span>
+                        <div className="text-4xl font-black text-emerald-600 tracking-tighter leading-none mb-2">
+                          {(() => {
+                            const activePlanGroups = [...new Set(monitorFilteredVehicles.map(v => `${v.deliveryDate}|${v.planLoad}`))].sort();
+                            if (activePlanGroups.length === 0) return 0;
+                            const safeIndex = currentRoundIndex % activePlanGroups.length;
+                            const currentPlan = activePlanGroups[safeIndex];
+                            return monitorFilteredVehicles.filter(v => 
+                              `${v.deliveryDate}|${v.planLoad}` === currentPlan && v.invoiceCompleted
+                            ).length;
+                          })()}
+                        </div>
                       </div>
                     </div>
 

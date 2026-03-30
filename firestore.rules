@@ -58,8 +58,8 @@ service cloud.firestore {
     }
 
     match /vehicles/{vehicleId} {
-      // Allow all authenticated users to read the vehicle list
-      allow read: if isAuthenticated();
+      // Allow public read access for monitor pages
+      allow read: if true;
       
       // Allow admins full access
       allow write: if isAdmin();
