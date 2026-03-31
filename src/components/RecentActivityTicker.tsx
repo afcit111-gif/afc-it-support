@@ -157,8 +157,8 @@ export const RecentActivityTicker = ({ activities, children }: { activities: Act
                     </div>
 
                     {/* Sub | Trip (Context) */}
-                    <div className="flex-1 min-w-0 flex items-center">
-                      <div className="inline-flex items-center gap-1.5 bg-stone-100/50 px-2 py-0.5 rounded-md border border-stone-200/50 max-w-full">
+                    <div className="flex-1 min-w-0 flex items-center overflow-hidden">
+                      <div className="inline-flex items-center gap-1.5 bg-stone-100/50 px-2 py-0.5 rounded-md border border-stone-200/50 max-w-full overflow-hidden">
                         <span className="text-[10px] font-black text-indigo-600 uppercase shrink-0">{activity.sub}</span>
                         <span className="text-[10px] font-bold text-stone-300 shrink-0">|</span>
                         <span className="text-[10px] font-black text-stone-600 uppercase truncate">{activity.trip}</span>
@@ -170,9 +170,6 @@ export const RecentActivityTicker = ({ activities, children }: { activities: Act
                       <div className="w-1.5 h-1.5 rounded-full shadow-sm" style={{ backgroundColor: STATUS_HEX_COLORS[activity.status] || '#d6d3d1' }} />
                       <div className="flex flex-col items-end">
                         <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap leading-none" style={{ color: STATUS_HEX_COLORS[activity.status] }}>
-                          {STATUS_LABELS[activity.status]}
-                        </span>
-                        <span className="text-[8px] font-bold opacity-60 whitespace-nowrap leading-none mt-0.5" style={{ color: STATUS_HEX_COLORS[activity.status] }}>
                           {STATUS_LABELS[activity.status]}
                         </span>
                       </div>

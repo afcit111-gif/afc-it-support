@@ -1277,42 +1277,42 @@ export default function App() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white p-10 rounded-3xl shadow-2xl max-w-2xl w-full text-center"
+          className="bg-white p-6 md:p-10 rounded-3xl shadow-2xl max-w-2xl w-full text-center"
         >
-          <div className="w-16 h-16 bg-indigo-100 hexagon flex items-center justify-center mx-auto mb-6">
-            <LayoutDashboard className="w-8 h-8 text-indigo-600" />
+          <div className="w-12 h-12 md:w-16 md:h-16 bg-indigo-100 hexagon flex items-center justify-center mx-auto mb-4 md:mb-6">
+            <LayoutDashboard className="w-6 h-6 md:w-8 md:h-8 text-indigo-600" />
           </div>
-          <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tighter">SELECT VIEW MODE</h2>
-          <p className="text-stone-500 mb-10">Choose how you want to experience the VehicleTracker</p>
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 tracking-tighter">SELECT VIEW MODE</h2>
+          <p className="text-sm md:text-base text-stone-500 mb-6 md:mb-10">Choose how you want to experience the VehicleTracker</p>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             <button 
               onClick={() => setViewMode('mobile')}
-              className="group p-8 rounded-2xl border-2 border-slate-100 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-center flex flex-col items-center gap-4"
+              className="group p-6 md:p-8 rounded-2xl border-2 border-slate-100 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-center flex flex-col items-center gap-3 md:gap-4"
             >
-              <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
-                <Smartphone size={32} />
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                <Smartphone size={viewMode === 'mobile' ? 24 : 32} />
               </div>
               <div>
-                <span className="block text-xl font-black text-slate-900 tracking-tight">Mobile View</span>
-                <span className="text-sm text-slate-500">Optimized for smartphones</span>
+                <span className="block text-lg md:text-xl font-black text-slate-900 tracking-tight">Mobile View</span>
+                <span className="text-xs md:text-sm text-slate-500">Optimized for smartphones</span>
               </div>
             </button>
             <button 
               onClick={() => setViewMode('desktop')}
-              className="group p-8 rounded-2xl border-2 border-slate-100 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-center flex flex-col items-center gap-4"
+              className="group p-6 md:p-8 rounded-2xl border-2 border-slate-100 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-center flex flex-col items-center gap-3 md:gap-4"
             >
-              <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
-                <Monitor size={32} />
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                <Monitor size={viewMode === 'mobile' ? 24 : 32} />
               </div>
               <div>
-                <span className="block text-xl font-black text-slate-900 tracking-tight">Desktop View</span>
-                <span className="text-sm text-slate-500">Full management dashboard</span>
+                <span className="block text-lg md:text-xl font-black text-slate-900 tracking-tight">Desktop View</span>
+                <span className="text-xs md:text-sm text-slate-500">Full management dashboard</span>
               </div>
             </button>
           </div>
           
-          <div className="mt-10 pt-6 border-t border-stone-100 flex items-center justify-between">
+          <div className="mt-8 md:mt-10 pt-6 border-t border-stone-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
                 {user.photoURL ? (
@@ -1321,13 +1321,13 @@ export default function App() {
                   <span>{(user.displayName || user.email || 'U').charAt(0).toUpperCase()}</span>
                 )}
               </div>
-              <span className="text-xs font-bold text-slate-600">{user.displayName || user.email}</span>
+              <span className="text-[10px] md:text-xs font-bold text-slate-600 truncate max-w-[100px] md:max-w-none">{user.displayName || user.email}</span>
             </div>
             <button 
               onClick={handleLogout}
-              className="text-xs font-black text-red-500 uppercase tracking-widest hover:text-red-600 transition-colors flex items-center gap-1.5"
+              className="text-[10px] md:text-xs font-black text-red-500 uppercase tracking-widest hover:text-red-600 transition-colors flex items-center gap-1.5"
             >
-              <LogOut size={14} />
+              <LogOut size={12} md:size={14} />
               Logout
             </button>
           </div>
@@ -1338,7 +1338,7 @@ export default function App() {
 
   return (
     <div className={`min-h-screen transition-all duration-500 ${viewMode === 'mobile' ? 'bg-slate-200 flex items-center justify-center py-8' : 'bg-slate-50/50'}`}>
-      <div className={`font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 transition-all duration-500 flex flex-col ${viewMode === 'mobile' ? 'w-full max-w-[430px] h-[850px] bg-white rounded-[3rem] border-[12px] border-slate-900 shadow-2xl overflow-hidden relative' : 'w-full min-h-screen'}`}>
+      <div className={`font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 transition-all duration-500 flex flex-col ${viewMode === 'mobile' ? 'w-[430px] h-[850px] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden relative' : 'w-full min-h-screen'}`}>
         {/* Top Activity Ticker */}
         <RecentActivityTicker activities={activities} />
 
@@ -1354,19 +1354,19 @@ export default function App() {
                 className="flex items-center gap-3 lg:gap-4 cursor-pointer active:scale-95 transition-transform"
                 onClick={() => setViewMode(null)}
               >
-                <div className={`bg-indigo-600 ${viewMode === 'mobile' ? 'w-10 h-10' : 'w-14 h-14'} hexagon flex items-center justify-center text-white shadow-lg shadow-indigo-100 shrink-0`}>
-                  <Truck size={viewMode === 'mobile' ? 20 : 28} className="animate-pulse" />
+                <div className={`bg-indigo-600 ${viewMode === 'mobile' ? 'w-12 h-12' : 'w-14 h-14'} hexagon flex items-center justify-center text-white shadow-lg shadow-indigo-100 shrink-0`}>
+                  <Truck size={viewMode === 'mobile' ? 24 : 28} className="animate-pulse" />
                 </div>
                 <div>
                   <img 
                     src="https://lh3.googleusercontent.com/d/1Cd3dVNnqheL1GtcAgomBcyylCRw7s8x-" 
                     alt="Logo" 
-                    className={`${viewMode === 'mobile' ? 'h-5 mb-1' : 'h-8 mb-2'} object-contain`}
+                    className={`${viewMode === 'mobile' ? 'h-6 mb-1' : 'h-8 mb-2'} object-contain`}
                     referrerPolicy="no-referrer"
                     crossOrigin="anonymous"
                   />
-                  <h1 className={`${viewMode === 'mobile' ? 'text-lg' : 'text-2xl'} font-black tracking-tighter text-slate-900 leading-none`}>VEHICLE<span className="text-indigo-600">TRACKER</span></h1>
-                  <p className={`${viewMode === 'mobile' ? 'text-[8px] mt-1' : 'text-[10px] mt-1.5'} font-bold text-slate-400 uppercase tracking-[0.2em]`}>Logistics Intelligence</p>
+                  <h1 className={`${viewMode === 'mobile' ? 'text-2xl' : 'text-2xl'} font-black tracking-tighter text-slate-900 leading-none`}>VEHICLE<span className="text-indigo-600">TRACKER</span></h1>
+                  <p className={`${viewMode === 'mobile' ? 'text-[10px] mt-1' : 'text-[10px] mt-1.5'} font-bold text-slate-400 uppercase tracking-[0.2em]`}>Logistics Intelligence</p>
                 </div>
               </div>
 
@@ -1478,7 +1478,7 @@ export default function App() {
                 <select
                   value={subFilter}
                   onChange={(e) => setSubFilter(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-9 pr-4 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all shadow-sm"
+                  className={`w-full bg-white border border-slate-200 rounded-xl py-3 pl-9 pr-4 ${viewMode === 'mobile' ? 'text-[11px]' : 'text-[11px]'} font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all shadow-sm`}
                 >
                   {subOptions.map(opt => <option key={opt} value={opt}>{opt === 'All' ? 'All Subs' : opt}</option>)}
                 </select>
@@ -1500,7 +1500,7 @@ export default function App() {
                 <select
                   value={timeFilter}
                   onChange={(e) => setTimeFilter(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-9 pr-4 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all shadow-sm"
+                  className={`w-full bg-white border border-slate-200 rounded-xl py-3 pl-9 pr-4 ${viewMode === 'mobile' ? 'text-[11px]' : 'text-[11px]'} font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all shadow-sm`}
                 >
                   {timeOptions.map(opt => <option key={opt} value={opt}>{opt === 'All' ? 'All Times' : opt}</option>)}
                 </select>
@@ -1511,7 +1511,7 @@ export default function App() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-9 pr-4 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all shadow-sm"
+                  className={`w-full bg-white border border-slate-200 rounded-xl py-3 pl-9 pr-4 ${viewMode === 'mobile' ? 'text-[11px]' : 'text-[11px]'} font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all shadow-sm`}
                 >
                   <option value="All">All Status</option>
                   <option value="Invoice Completed">Invoice Completed</option>
@@ -1524,7 +1524,7 @@ export default function App() {
                 <input
                   type="text"
                   placeholder="Search..."
-                  className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-9 pr-4 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
+                  className={`w-full bg-white border border-slate-200 rounded-xl py-3 pl-9 pr-4 ${viewMode === 'mobile' ? 'text-[11px]' : 'text-[11px]'} font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm`}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -1593,24 +1593,24 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden"
+              className={`bg-white rounded-3xl shadow-2xl ${viewMode === 'mobile' ? 'max-w-sm' : 'max-w-md'} w-full overflow-hidden`}
             >
-              <div className="p-6 border-b border-stone-100 flex items-center justify-between bg-stone-50">
+              <div className={`${viewMode === 'mobile' ? 'p-4' : 'p-6'} border-b border-stone-100 flex items-center justify-between bg-stone-50`}>
                 <div className="flex items-center gap-3">
                   <div className="bg-stone-900 p-2 rounded-lg text-white">
-                    <Edit2 size={20} />
+                    <Edit2 size={viewMode === 'mobile' ? 16 : 20} />
                   </div>
-                  <h2 className="text-xl font-bold">Edit Trip Details</h2>
+                  <h2 className={`${viewMode === 'mobile' ? 'text-lg' : 'text-xl'} font-bold`}>Edit Trip Details</h2>
                 </div>
                 <button 
                   onClick={() => setEditingVehicle(null)}
                   className="p-2 hover:bg-stone-200 rounded-full transition-colors"
                 >
-                  <X size={20} />
+                  <X size={viewMode === 'mobile' ? 16 : 20} />
                 </button>
               </div>
 
-              <form onSubmit={handleEditDriver} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <form onSubmit={handleEditDriver} className={`${viewMode === 'mobile' ? 'p-5 gap-4' : 'p-8 gap-6'} grid grid-cols-1 md:grid-cols-2`}>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Driver Name *</label>
                   <input
@@ -1725,84 +1725,84 @@ export default function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden"
+              className={`bg-white rounded-3xl shadow-2xl ${viewMode === 'mobile' ? 'max-w-sm' : 'max-w-2xl'} w-full overflow-hidden`}
             >
-              <div className="p-6 border-b border-stone-100 flex items-center justify-between bg-stone-50">
+              <div className={`${viewMode === 'mobile' ? 'p-4' : 'p-6'} border-b border-stone-100 flex items-center justify-between bg-stone-50`}>
                 <div className="flex items-center gap-3">
                   <div className="bg-stone-900 p-2 rounded-lg text-white">
-                    <Plus size={20} />
+                    <Plus size={viewMode === 'mobile' ? 16 : 20} />
                   </div>
-                  <h2 className="text-xl font-bold">Add New Vehicle Plan</h2>
+                  <h2 className={`${viewMode === 'mobile' ? 'text-lg' : 'text-xl'} font-bold`}>Add New Vehicle Plan</h2>
                 </div>
                 <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-stone-200 rounded-full transition-colors">
-                  <X size={20} />
+                  <X size={viewMode === 'mobile' ? 16 : 20} />
                 </button>
               </div>
 
-              <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Delivery Date</label>
+              <div className={`${viewMode === 'mobile' ? 'p-4 gap-3' : 'p-8 gap-6'} grid grid-cols-1 md:grid-cols-2`}>
+                <div className="space-y-1 md:space-y-2">
+                  <label className="text-[10px] md:text-xs font-bold text-stone-500 uppercase tracking-widest">Delivery Date</label>
                   <input 
                     type="date" 
-                    className="w-full p-3 bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                    className={`w-full ${viewMode === 'mobile' ? 'p-2.5 text-sm' : 'p-3'} bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all`}
                     value={newVehicle.deliveryDate}
                     onChange={e => setNewVehicle({...newVehicle, deliveryDate: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Trip Code</label>
+                <div className="space-y-1 md:space-y-2">
+                  <label className="text-[10px] md:text-xs font-bold text-stone-500 uppercase tracking-widest">Trip Code</label>
                   <input 
                     type="text" 
                     placeholder="e.g. C1"
-                    className="w-full p-3 bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                    className={`w-full ${viewMode === 'mobile' ? 'p-2.5 text-sm' : 'p-3'} bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all`}
                     value={newVehicle.tripCode || ''}
                     onChange={e => setNewVehicle({...newVehicle, tripCode: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Trip Number</label>
+                <div className="space-y-1 md:space-y-2">
+                  <label className="text-[10px] md:text-xs font-bold text-stone-500 uppercase tracking-widest">Trip Number</label>
                   <input 
                     type="text" 
                     placeholder="e.g. Trip 1"
-                    className="w-full p-3 bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                    className={`w-full ${viewMode === 'mobile' ? 'p-2.5 text-sm' : 'p-3'} bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all`}
                     value={newVehicle.tripNumber || ''}
                     onChange={e => setNewVehicle({...newVehicle, tripNumber: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Vehicle Number *</label>
+                <div className="space-y-1 md:space-y-2">
+                  <label className="text-[10px] md:text-xs font-bold text-stone-500 uppercase tracking-widest">Vehicle Number *</label>
                   <input 
                     type="text" 
                     placeholder="e.g. กข1234"
-                    className="w-full p-3 bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                    className={`w-full ${viewMode === 'mobile' ? 'p-2.5 text-sm' : 'p-3'} bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all`}
                     value={newVehicle.vehicleNumber || ''}
                     onChange={e => setNewVehicle({...newVehicle, vehicleNumber: cleanInput(e.target.value)})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Driver Name *</label>
+                <div className="space-y-1 md:space-y-2">
+                  <label className="text-[10px] md:text-xs font-bold text-stone-500 uppercase tracking-widest">Driver Name *</label>
                   <input 
                     type="text" 
                     placeholder="Driver full name"
-                    className="w-full p-3 bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                    className={`w-full ${viewMode === 'mobile' ? 'p-2.5 text-sm' : 'p-3'} bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all`}
                     value={newVehicle.driverName || ''}
                     onChange={e => setNewVehicle({...newVehicle, driverName: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Driver Phone</label>
+                <div className="space-y-1 md:space-y-2">
+                  <label className="text-[10px] md:text-xs font-bold text-stone-500 uppercase tracking-widest">Driver Phone</label>
                   <input 
                     type="text" 
                     placeholder="081xxxxxxx"
-                    className="w-full p-3 bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                    className={`w-full ${viewMode === 'mobile' ? 'p-2.5 text-sm' : 'p-3'} bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all`}
                     value={newVehicle.driverPhone || ''}
                     onChange={e => setNewVehicle({...newVehicle, driverPhone: cleanInput(e.target.value)})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Sub</label>
+                <div className="space-y-1 md:space-y-2">
+                  <label className="text-[10px] md:text-xs font-bold text-stone-500 uppercase tracking-widest">Sub</label>
                   <select 
-                    className="w-full p-3 bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                    className={`w-full ${viewMode === 'mobile' ? 'p-2.5 text-sm' : 'p-3'} bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all`}
                     value={newVehicle.sub}
                     onChange={e => setNewVehicle({...newVehicle, sub: e.target.value})}
                   >
@@ -1812,10 +1812,10 @@ export default function App() {
                     <option value="Other">Other</option>
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">Plan Load Time</label>
+                <div className="space-y-1 md:space-y-2">
+                  <label className="text-[10px] md:text-xs font-bold text-stone-500 uppercase tracking-widest">Plan Load Time</label>
                   <select 
-                    className="w-full p-3 bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                    className={`w-full ${viewMode === 'mobile' ? 'p-2.5 text-sm' : 'p-3'} bg-stone-100 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all`}
                     value={newVehicle.planLoad}
                     onChange={e => setNewVehicle({...newVehicle, planLoad: e.target.value, vehiclePlan: e.target.value})}
                   >
@@ -1826,24 +1826,24 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="p-6 bg-stone-50 border-t border-stone-100 flex items-center justify-between">
+              <div className={`${viewMode === 'mobile' ? 'p-4' : 'p-6'} bg-stone-50 border-t border-stone-100 flex items-center justify-between`}>
                 <button 
                   onClick={downloadTemplate}
-                  className="flex items-center gap-2 text-indigo-600 font-bold hover:underline"
+                  className={`flex items-center gap-2 text-indigo-600 font-bold hover:underline ${viewMode === 'mobile' ? 'text-xs' : ''}`}
                 >
-                  <Download size={18} />
-                  Download Excel Template
+                  <Download size={viewMode === 'mobile' ? 14 : 18} />
+                  {viewMode === 'mobile' ? 'Template' : 'Download Excel Template'}
                 </button>
-                <div className="flex gap-3">
+                <div className="flex gap-2 md:gap-3">
                   <button 
                     onClick={() => setShowAddModal(false)}
-                    className="px-6 py-3 rounded-xl font-bold text-stone-500 hover:bg-stone-200 transition-all"
+                    className={`px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-stone-500 hover:bg-stone-200 transition-all ${viewMode === 'mobile' ? 'text-sm' : ''}`}
                   >
                     Cancel
                   </button>
                   <button 
                     onClick={handleAddManual}
-                    className="bg-stone-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-stone-800 transition-all shadow-lg shadow-stone-200 text-sm"
+                    className={`bg-stone-900 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold hover:bg-stone-800 transition-all shadow-lg shadow-stone-200 ${viewMode === 'mobile' ? 'text-sm' : ''}`}
                   >
                     Add Vehicle
                   </button>
@@ -1859,30 +1859,30 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[2.5rem] shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]"
+              className={`bg-white ${viewMode === 'mobile' ? 'rounded-3xl max-w-sm' : 'rounded-[2.5rem] max-w-4xl'} shadow-2xl w-full overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]`}
             >
               <div ref={summaryRef} className="bg-white flex flex-col flex-1 overflow-hidden">
                 {/* Header */}
-                <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
-                  <div className="flex items-center gap-5">
-                    <div className="bg-indigo-600 w-14 h-14 rounded-2xl text-white flex items-center justify-center shadow-xl shadow-indigo-100">
-                      <BarChart3 size={28} />
+                <div className={`${viewMode === 'mobile' ? 'p-4' : 'p-8'} border-b border-slate-100 flex items-center justify-between bg-white shrink-0`}>
+                  <div className="flex items-center gap-3 md:gap-5">
+                    <div className={`bg-indigo-600 ${viewMode === 'mobile' ? 'w-10 h-10 rounded-xl' : 'w-14 h-14 rounded-2xl'} text-white flex items-center justify-center shadow-xl shadow-indigo-100`}>
+                      <BarChart3 size={viewMode === 'mobile' ? 20 : 28} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-slate-900 tracking-tight">Daily Operations Report</h2>
+                      <h2 className={`${viewMode === 'mobile' ? 'text-lg' : 'text-2xl'} font-black text-slate-900 tracking-tight leading-tight`}>Daily Operations Report</h2>
                       {(() => {
                         const latestDate = vehicles.length > 0 
                           ? [...new Set(vehicles.map(v => v.deliveryDate))].sort((a, b) => new Date(b as string).getTime() - new Date(a as string).getTime())[0]
                           : 'No Data';
                         return (
-                          <div className="flex items-center gap-4 mt-1">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                              <Calendar size={14} className="text-indigo-500" />
+                          <div className="flex items-center gap-2 md:gap-4 mt-0.5 md:mt-1">
+                            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 md:gap-2">
+                              <Calendar size={viewMode === 'mobile' ? 10 : 14} className="text-indigo-500" />
                               {latestDate}
                             </p>
-                            <div className="h-3 w-px bg-slate-200" />
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                              <Clock size={14} className="text-indigo-500" />
+                            <div className="h-2 md:h-3 w-px bg-slate-200" />
+                            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 md:gap-2">
+                              <Clock size={viewMode === 'mobile' ? 10 : 14} className="text-indigo-500" />
                               {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
                             </p>
                           </div>
@@ -1890,24 +1890,26 @@ export default function App() {
                       })()}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <button 
-                      onClick={() => setIsFullScreenSummary(true)} 
-                      className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-95"
-                    >
-                      <Monitor size={14} />
-                      Dashboard Mode
-                    </button>
+                  <div className="flex items-center gap-2 md:gap-3">
+                    {viewMode !== 'mobile' && (
+                      <button 
+                        onClick={() => setIsFullScreenSummary(true)} 
+                        className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-95"
+                      >
+                        <Monitor size={14} />
+                        Dashboard Mode
+                      </button>
+                    )}
                     <button 
                       onClick={() => setShowSummary(false)} 
-                      className="w-12 h-12 flex items-center justify-center hover:bg-slate-100 rounded-2xl transition-all text-slate-400 hover:text-slate-900 border border-slate-200"
+                      className={`${viewMode === 'mobile' ? 'w-10 h-10 rounded-xl' : 'w-12 h-12 rounded-2xl'} flex items-center justify-center hover:bg-slate-100 transition-all text-slate-400 hover:text-slate-900 border border-slate-200`}
                     >
-                      <X size={24} />
+                      <X size={viewMode === 'mobile' ? 18 : 24} />
                     </button>
                   </div>
                 </div>
 
-                <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1">
+                <div className={`${viewMode === 'mobile' ? 'p-4 space-y-6' : 'p-8 space-y-8'} overflow-y-auto custom-scrollbar flex-1`}>
                   {(() => {
                     const latestDate = vehicles.length > 0 
                       ? [...new Set(vehicles.map(v => v.deliveryDate))].sort((a, b) => new Date(b as string).getTime() - new Date(a as string).getTime())[0]
@@ -1926,8 +1928,8 @@ export default function App() {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                           {/* Left: Progress & Efficiency */}
                           <div className="space-y-8">
-                            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex items-center gap-8">
-                              <div className="relative w-32 h-32 shrink-0">
+                            <div className={`bg-white ${viewMode === 'mobile' ? 'p-5 rounded-3xl' : 'p-8 rounded-[2.5rem]'} border border-slate-200 shadow-sm flex items-center gap-6`}>
+                              <div className={`relative ${viewMode === 'mobile' ? 'w-24 h-24' : 'w-32 h-32'} shrink-0`}>
                                 <svg className="w-full h-full" viewBox="0 0 36 36">
                                   <path
                                     className="text-slate-100 stroke-current"
@@ -1947,27 +1949,27 @@ export default function App() {
                                   />
                                 </svg>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                  <span className="text-2xl font-black text-slate-900">{completionRate}%</span>
+                                  <span className={`${viewMode === 'mobile' ? 'text-xl' : 'text-2xl'} font-black text-slate-900`}>{completionRate}%</span>
                                 </div>
                               </div>
                               <div>
-                                <h3 className="text-lg font-black text-slate-900 mb-1">Overall Progress</h3>
-                                <p className="text-sm text-slate-500 font-medium">Daily completion rate for all scheduled vehicles.</p>
+                                <h3 className={`${viewMode === 'mobile' ? 'text-base' : 'text-lg'} font-black text-slate-900 mb-1`}>Overall Progress</h3>
+                                <p className={`${viewMode === 'mobile' ? 'text-xs' : 'text-sm'} text-slate-500 font-medium`}>Daily completion rate for all scheduled vehicles.</p>
                                 <div className="flex items-center gap-4 mt-4">
                                   <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-indigo-600" />
-                                    <span className="text-xs font-bold text-slate-600">Done</span>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+                                    <span className="text-[10px] font-bold text-slate-600">Done</span>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-slate-200" />
-                                    <span className="text-xs font-bold text-slate-600">Remaining</span>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+                                    <span className="text-[10px] font-bold text-slate-600">Remaining</span>
                                   </div>
                                 </div>
                               </div>
                             </div>
 
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-xl shadow-slate-200">
-                              <div className="flex items-center justify-between mb-8">
+                            <div className={`bg-slate-900 ${viewMode === 'mobile' ? 'p-5 rounded-3xl' : 'p-8 rounded-[2.5rem]'} text-white shadow-xl shadow-slate-200`}>
+                              <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Efficiency Metrics</h3>
                                 <BarChart3 size={16} className="text-indigo-400" />
                               </div>
@@ -1981,21 +1983,21 @@ export default function App() {
                                   : 0;
                                 
                                 return (
-                                  <div className="grid grid-cols-2 gap-8">
+                                  <div className={`grid ${viewMode === 'mobile' ? 'grid-cols-1 gap-6' : 'grid-cols-2 gap-8'}`}>
                                     <div>
-                                      <p className="text-4xl font-black text-white">{formatEfficiency(parseInt(avgTime as string))}</p>
+                                      <p className={`${viewMode === 'mobile' ? 'text-3xl' : 'text-4xl'} font-black text-white`}>{formatEfficiency(parseInt(avgTime as string))}</p>
                                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Avg. Processing / Vehicle</p>
                                     </div>
-                                    <div className="space-y-4">
+                                    <div className="space-y-3">
                                       <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-slate-400">On Time</span>
-                                        <span className="text-xs font-black text-emerald-400">
+                                        <span className="text-[10px] font-bold text-slate-400">On Time</span>
+                                        <span className="text-[10px] font-black text-emerald-400">
                                           {latestVehicles.filter(v => v.status !== 'Waiting' && getDelayStatus(v.deliveryDate, v.planLoad, v.checkIn)?.status === 'On Time').length}
                                         </span>
                                       </div>
                                       <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-slate-400">Delayed</span>
-                                        <span className="text-xs font-black text-red-400">
+                                        <span className="text-[10px] font-bold text-slate-400">Delayed</span>
+                                        <span className="text-[10px] font-black text-red-400">
                                           {latestVehicles.filter(v => v.status !== 'Waiting' && getDelayStatus(v.deliveryDate, v.planLoad, v.checkIn)?.status === 'Delay').length}
                                         </span>
                                       </div>
@@ -2007,9 +2009,9 @@ export default function App() {
                           </div>
 
                           {/* Right: Status Breakdown */}
-                          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Hand Over Progress by Status</h3>
-                            <div className="space-y-5">
+                          <div className={`bg-white ${viewMode === 'mobile' ? 'p-5 rounded-3xl' : 'p-8 rounded-[2.5rem]'} border border-slate-200 shadow-sm`}>
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Hand Over Progress by Status</h3>
+                            <div className="space-y-4">
                               {STATUS_FLOW.map(status => {
                                 const count = latestVehicles.filter(v => v.status === status).length;
                                 const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
@@ -2017,21 +2019,21 @@ export default function App() {
                                   <div key={status} className="space-y-2">
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-lg ${STATUS_SOLID_COLORS[status]} text-white flex items-center justify-center shadow-sm`}>
-                                          {status === 'Waiting' ? <Clock size={14} /> : 
-                                           status === 'Check In' ? <Truck size={14} /> :
-                                           status === 'Invoice Receiving' ? <FileDown size={14} /> :
-                                           status === 'Checking' ? <Search size={14} /> :
-                                           status === 'Handover' ? <Package size={14} /> : <CheckCircle2 size={14} />}
+                                        <div className={`w-7 h-7 rounded-lg ${STATUS_SOLID_COLORS[status]} text-white flex items-center justify-center shadow-sm`}>
+                                          {status === 'Waiting' ? <Clock size={12} /> : 
+                                           status === 'Check In' ? <Truck size={12} /> :
+                                           status === 'Invoice Receiving' ? <FileDown size={12} /> :
+                                           status === 'Checking' ? <Search size={12} /> :
+                                           status === 'Handover' ? <Package size={12} /> : <CheckCircle2 size={12} />}
                                         </div>
                                         <div className="flex flex-col">
-                                          <span className="text-xs font-black text-slate-700 leading-tight">{STATUS_LABELS[status]}</span>
-                                          <span className="text-[10px] font-bold text-slate-500 mt-0.5">{STATUS_THAI_LABELS[status]}</span>
+                                          <span className="text-[10px] font-black text-slate-700 leading-tight">{STATUS_LABELS[status]}</span>
+                                          <span className="text-[9px] font-bold text-slate-500 mt-0.5">{STATUS_THAI_LABELS[status]}</span>
                                         </div>
                                       </div>
-                                      <span className="text-xs font-black text-slate-900">{count} <span className="text-slate-400 font-bold ml-1">({percentage}%)</span></span>
+                                      <span className="text-[10px] font-black text-slate-900">{count} <span className="text-slate-400 font-bold ml-1">({percentage}%)</span></span>
                                     </div>
-                                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                                       <motion.div 
                                         initial={{ width: 0 }}
                                         animate={{ width: `${percentage}%` }}
@@ -2046,24 +2048,24 @@ export default function App() {
                         </div>
 
                         {/* Bottom: Handover Progress Table */}
-                        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden" ref={handOverRef}>
-                          <div className="flex items-center justify-between mb-8">
+                        <div className={`bg-white ${viewMode === 'mobile' ? 'p-4 rounded-3xl' : 'p-8 rounded-[2.5rem]'} border border-slate-200 shadow-sm overflow-hidden`} ref={handOverRef}>
+                          <div className={`flex items-center justify-between ${viewMode === 'mobile' ? 'mb-4' : 'mb-8'}`}>
                             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hand Over Progress by Plan</h3>
                             <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Completed</span>
+                              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Completed</span>
                             </div>
                           </div>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
+                          <div className="overflow-x-auto custom-scrollbar">
+                            <table className="w-full text-left border-collapse min-w-[600px]">
                               <thead>
-                                <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                                  <th className="pb-4 px-2">Plan Load</th>
+                                <tr className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                  <th className="pb-3 px-2">Plan Load</th>
                                   {STATUS_FLOW.map(status => (
-                                    <th key={status} className="pb-4 px-2 text-center">{STATUS_LABELS[status]}</th>
+                                    <th key={status} className="pb-3 px-2 text-center">{STATUS_LABELS[status]}</th>
                                   ))}
-                                  <th className="pb-4 px-2 text-center bg-slate-50 rounded-t-xl">Total</th>
-                                  <th className="pb-4 px-2 text-right">Progress</th>
+                                  <th className="pb-3 px-2 text-center bg-slate-50 rounded-t-xl">Total</th>
+                                  <th className="pb-3 px-2 text-right">Progress</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-50">
@@ -2089,19 +2091,19 @@ export default function App() {
 
                                     return (
                                       <tr key={plan} className="group hover:bg-slate-50/50 transition-colors">
-                                        <td className="py-4 px-2 font-black text-slate-900">{plan}</td>
+                                        <td className="py-3 px-2 font-black text-slate-900 text-[11px]">{plan}</td>
                                         {STATUS_FLOW.map(status => (
-                                          <td key={status} className={`py-4 px-2 text-center font-bold ${status === 'Check Out' ? 'text-emerald-600' : 'text-slate-500'}`}>
+                                          <td key={status} className={`py-3 px-2 text-center font-bold text-[11px] ${status === 'Check Out' ? 'text-emerald-600' : 'text-slate-500'}`}>
                                             {statusCounts[status] || '-'}
                                           </td>
                                         ))}
-                                        <td className="py-4 px-2 text-center font-black text-slate-900 bg-slate-50/50">{rowTotal}</td>
-                                        <td className="py-4 px-2 text-right">
-                                          <div className="flex items-center justify-end gap-3">
-                                            <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <td className="py-3 px-2 text-center font-black text-slate-900 bg-slate-50/50 text-[11px]">{rowTotal}</td>
+                                        <td className="py-3 px-2 text-right">
+                                          <div className="flex items-center justify-end gap-2">
+                                            <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
                                               <div className={`h-full ${percentage === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: `${percentage}%` }} />
                                             </div>
-                                            <span className={`text-[10px] font-black w-8 text-right ${percentage === 100 ? 'text-emerald-600' : 'text-slate-900'}`}>{percentage.toFixed(0)}%</span>
+                                            <span className={`text-[9px] font-black w-7 text-right ${percentage === 100 ? 'text-emerald-600' : 'text-slate-900'}`}>{percentage.toFixed(0)}%</span>
                                           </div>
                                         </td>
                                       </tr>
@@ -2111,13 +2113,13 @@ export default function App() {
                                   return (
                                     <>
                                       {rows}
-                                      <tr className="bg-slate-900 text-white font-black">
-                                        <td className="py-4 px-4 rounded-l-2xl">TOTAL</td>
+                                      <tr className="bg-slate-900 text-white font-black text-[11px]">
+                                        <td className="py-3 px-4 rounded-l-2xl">TOTAL</td>
                                         {STATUS_FLOW.map(status => (
-                                          <td key={status} className="py-4 px-2 text-center">{totalsByStatus[status]}</td>
+                                          <td key={status} className="py-3 px-2 text-center">{totalsByStatus[status]}</td>
                                         ))}
-                                        <td className="py-4 px-2 text-center text-indigo-400">{grandTotal}</td>
-                                        <td className="py-4 px-4 text-right rounded-r-2xl">
+                                        <td className="py-3 px-2 text-center text-indigo-400">{grandTotal}</td>
+                                        <td className="py-3 px-4 text-right rounded-r-2xl">
                                           {grandTotal > 0 ? ((totalsByStatus['Check Out'] / grandTotal) * 100).toFixed(0) : 0}%
                                         </td>
                                       </tr>
@@ -2134,26 +2136,26 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-center shrink-0">
+              <div className={`${viewMode === 'mobile' ? 'p-4' : 'p-8'} bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-center shrink-0`}>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <button 
                     onClick={() => handleCaptureSummary('all')}
-                    className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 active:scale-95 text-sm"
+                    className={`flex items-center justify-center gap-2 bg-indigo-600 text-white ${viewMode === 'mobile' ? 'px-4 py-3 rounded-xl' : 'px-8 py-4 rounded-2xl'} font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 active:scale-95 text-sm`}
                   >
-                    <Camera size={18} />
+                    <Camera size={viewMode === 'mobile' ? 16 : 18} />
                     Capture: Full Report
                   </button>
                   <button 
                     onClick={() => handleCaptureSummary('handover')}
-                    className="flex items-center justify-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95 text-sm"
+                    className={`flex items-center justify-center gap-2 bg-slate-900 text-white ${viewMode === 'mobile' ? 'px-4 py-3 rounded-xl' : 'px-8 py-4 rounded-2xl'} font-black hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95 text-sm`}
                   >
-                    <Table size={18} />
+                    <Table size={viewMode === 'mobile' ? 16 : 18} />
                     Capture: Table Only
                   </button>
                 </div>
                 <button 
                   onClick={() => setShowSummary(false)}
-                  className="w-full sm:w-auto bg-white border border-slate-200 text-slate-600 px-10 py-4 rounded-2xl font-black hover:bg-slate-50 transition-all active:scale-95 text-sm"
+                  className={`w-full sm:w-auto bg-white border border-slate-200 text-slate-600 ${viewMode === 'mobile' ? 'px-6 py-3 rounded-xl' : 'px-10 py-4 rounded-2xl'} font-black hover:bg-slate-50 transition-all active:scale-95 text-sm`}
                 >
                   Close
                 </button>
@@ -2288,22 +2290,22 @@ export default function App() {
                   {/* Card Header */}
                   <div className="p-6 pb-4 flex items-start justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className={`w-16 h-16 rounded-2xl ${STATUS_SOLID_COLORS[vehicle.status]} flex flex-col items-center justify-center text-white shadow-lg transition-colors duration-500`}>
-                        <span className="text-[10px] font-black uppercase tracking-widest opacity-70 leading-none mb-1">{vehicle.planLoad}</span>
-                        <span className="text-2xl font-black leading-none">{vehicleQueues[vehicle.id] || '-'}</span>
+                      <div className={`rounded-2xl ${STATUS_SOLID_COLORS[vehicle.status]} flex flex-col items-center justify-center text-white shadow-lg transition-colors duration-500 ${viewMode === 'mobile' ? 'w-12 h-12' : 'w-16 h-16'}`}>
+                        <span className={`${viewMode === 'mobile' ? 'text-[10px]' : 'text-[10px]'} font-black uppercase tracking-widest opacity-70 leading-none mb-1`}>{vehicle.planLoad}</span>
+                        <span className={`${viewMode === 'mobile' ? 'text-2xl' : 'text-2xl'} font-black leading-none`}>{vehicleQueues[vehicle.id] || '-'}</span>
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vehicle</span>
+                          <span className={`${viewMode === 'mobile' ? 'text-[10px]' : 'text-[10px]'} font-black text-slate-400 uppercase tracking-widest`}>Vehicle</span>
                         </div>
-                        <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none">{vehicle.vehicleNumber}</h3>
+                        <h3 className={`${viewMode === 'mobile' ? 'text-xl' : 'text-xl'} font-black text-slate-900 tracking-tight leading-none`}>{vehicle.vehicleNumber}</h3>
                         {(() => {
                           const tatMins = getTurnaroundTime(vehicle.checkIn, vehicle.checkOut);
                           if (tatMins !== null) {
                             return (
-                              <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200">
-                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">TAT</span>
-                                <span className={`text-xs font-black ${vehicle.checkOut ? 'text-emerald-600' : 'text-red-600'}`}>
+                              <div className={`mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200`}>
+                                <span className={`${viewMode === 'mobile' ? 'text-[9px]' : 'text-[9px]'} font-black text-slate-500 uppercase tracking-widest`}>TAT</span>
+                                <span className={`${viewMode === 'mobile' ? 'text-xs' : 'text-xs'} font-black ${vehicle.checkOut ? 'text-emerald-600' : 'text-red-600'}`}>
                                   {formatEfficiency(tatMins)}
                                 </span>
                               </div>
@@ -2313,57 +2315,56 @@ export default function App() {
                         })()}
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-end gap-1 md:gap-2">
                       <button 
                         onClick={() => handleStatusRevert(vehicle.id, vehicle.status)}
-                        className={`p-2 rounded-xl transition-all ${vehicle.status === 'Waiting' ? 'opacity-0 pointer-events-none' : vehicle.revertRemark ? 'text-red-500 hover:bg-red-50' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
+                        className={`p-1.5 md:p-2 rounded-xl transition-all ${vehicle.status === 'Waiting' ? 'opacity-0 pointer-events-none' : vehicle.revertRemark ? 'text-red-500 hover:bg-red-50' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
                         title="Revert Status"
                       >
-                        <RotateCcw size={18} className="rotate-180" />
+                        <RotateCcw size={viewMode === 'mobile' ? 14 : 18} className="rotate-180" />
                       </button>
                       {vehicle.revertRemark && (
-                        <span className="text-[8px] font-black text-red-500 bg-red-50 px-1.5 py-0.5 rounded-md max-w-[80px] truncate" title={vehicle.revertRemark}>
+                        <span className="text-[7px] font-black text-red-500 bg-red-50 px-1.5 py-0.5 rounded-md max-w-[60px] md:max-w-[80px] truncate" title={vehicle.revertRemark}>
                           {vehicle.revertRemark}
                         </span>
                       )}
                       <button 
                         onClick={() => setEditingVehicle(vehicle)}
-                        className={`p-2 rounded-xl transition-all ${vehicle.status === 'Check Out' ? 'opacity-0 pointer-events-none' : vehicle.revertRemark ? 'text-red-500 hover:bg-red-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                        className={`p-1.5 md:p-2 rounded-xl transition-all ${vehicle.status === 'Check Out' ? 'opacity-0 pointer-events-none' : vehicle.revertRemark ? 'text-red-500 hover:bg-red-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
                         title="Edit Details"
                       >
-                        <Edit2 size={18} />
+                        <Edit2 size={viewMode === 'mobile' ? 14 : 18} />
                       </button>
                     </div>
                   </div>
 
-                  {/* Driver & Trip Info */}
-                  <div className="px-6 py-4 bg-slate-50/50 border-y border-slate-100 flex flex-col gap-3">
+                  <div className={`${viewMode === 'mobile' ? 'px-4 py-2.5' : 'px-6 py-4'} bg-slate-50/50 border-y border-slate-100 flex flex-col gap-2 md:gap-3`}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex flex-col min-w-0">
-                        <p className="text-base font-black text-slate-900 leading-tight break-words flex items-center gap-1.5">
-                          <User size={12} className="text-indigo-500 shrink-0" />
+                        <p className={`${viewMode === 'mobile' ? 'text-base' : 'text-base'} font-black text-slate-900 leading-tight break-words flex items-center gap-1.5`}>
+                          <User size={viewMode === 'mobile' ? 12 : 12} className="text-indigo-500 shrink-0" />
                           {vehicle.driverName}
                         </p>
-                        <p className="text-sm font-bold text-slate-500 flex items-center gap-1.5 mt-1">
-                          <Phone size={12} className="text-indigo-500 shrink-0" />
+                        <p className={`${viewMode === 'mobile' ? 'text-sm' : 'text-sm'} font-bold text-slate-500 flex items-center gap-1.5 mt-0.5 md:mt-1`}>
+                          <Phone size={viewMode === 'mobile' ? 12 : 12} className="text-indigo-500 shrink-0" />
                           {vehicle.driverPhone}
                         </p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">TRIP NUMBER</p>
-                        <p className="text-3xl font-black text-indigo-600 leading-none">{vehicle.tripC}</p>
+                        <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">TRIP NUMBER</p>
+                        <p className={`${viewMode === 'mobile' ? 'text-3xl' : 'text-3xl'} font-black text-indigo-600 leading-none`}>{vehicle.tripC}</p>
                       </div>
                     </div>
                     
-                    <div className="pt-3 border-t border-slate-100/50 flex items-center justify-between gap-4">
+                    <div className="pt-2 md:pt-3 border-t border-slate-100/50 flex items-center justify-between gap-4">
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SUB</span>
-                        <span className="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-md text-center border border-indigo-100/50 shadow-sm">
+                        <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">SUB</span>
+                        <span className={`${viewMode === 'mobile' ? 'text-sm px-3 py-1' : 'text-sm px-3 py-1'} font-bold text-indigo-600 bg-indigo-50 rounded-md text-center border border-indigo-100/50 shadow-sm`}>
                           {vehicle.sub}
                         </span>
                       </div>
                       <div className="text-right min-w-0">
-                        <p className="text-[11px] font-bold text-slate-500 break-all leading-normal">
+                        <p className={`${viewMode === 'mobile' ? 'text-[11px]' : 'text-[11px]'} font-bold text-slate-500 break-all leading-normal`}>
                           {vehicle.trip}
                         </p>
                       </div>
@@ -2371,26 +2372,26 @@ export default function App() {
                   </div>
 
                   {/* Progress & Status */}
-                  <div className="p-6 flex-1 flex flex-col">
-                    <div className="flex items-center justify-between mb-3">
+                  <div className={`${viewMode === 'mobile' ? 'p-4' : 'p-6'} flex-1 flex flex-col`}>
+                    <div className="flex items-center justify-between mb-2 md:mb-3">
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Status</span>
-                        <div className={`inline-flex flex-col px-3 py-1.5 rounded-xl border ${STATUS_COLORS[vehicle.status]} border-current/10 shadow-sm`}>
-                          <span className="text-xs font-black uppercase tracking-widest leading-tight">
+                        <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Status</span>
+                        <div className={`inline-flex flex-col ${viewMode === 'mobile' ? 'px-2 py-1' : 'px-3 py-1.5'} rounded-xl border ${STATUS_COLORS[vehicle.status]} border-current/10 shadow-sm`}>
+                          <span className={`${viewMode === 'mobile' ? 'text-xs' : 'text-xs'} font-black uppercase tracking-widest leading-tight`}>
                             {STATUS_LABELS[vehicle.status]}
                           </span>
-                          <span className="text-[10px] font-bold mt-0.5 opacity-80 uppercase tracking-wider">
+                          <span className={`${viewMode === 'mobile' ? 'text-[10px]' : 'text-[10px]'} font-bold mt-0.5 opacity-80 uppercase tracking-wider`}>
                             {STATUS_THAI_LABELS[vehicle.status]}
                           </span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Progress</span>
-                        <span className="text-lg font-black text-slate-900">{vehicle.percentage}%</span>
+                        <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Progress</span>
+                        <span className={`${viewMode === 'mobile' ? 'text-lg' : 'text-lg'} font-black text-slate-900`}>{vehicle.percentage}%</span>
                       </div>
                     </div>
 
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden mb-4 shadow-inner">
+                    <div className={`w-full bg-slate-100 rounded-full ${viewMode === 'mobile' ? 'h-2' : 'h-2.5'} overflow-hidden mb-3 md:mb-4 shadow-inner`}>
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${vehicle.percentage}%` }}
@@ -2405,41 +2406,41 @@ export default function App() {
                     <button 
                       onClick={() => handleToggleInvoiceCompleted(vehicle)}
                       disabled={!!vehicle.invoiceCompleted}
-                      className={`w-full flex items-center justify-center gap-2 py-2.5 mb-6 rounded-2xl text-sm font-black transition-all border ${
+                      className={`w-full flex items-center justify-center gap-2 ${viewMode === 'mobile' ? 'py-2 mb-4' : 'py-2.5 mb-6'} rounded-2xl text-sm font-black transition-all border ${
                         vehicle.invoiceCompleted 
                           ? 'bg-emerald-500 text-white border-emerald-600 cursor-not-allowed shadow-sm' 
                           : 'bg-red-500 text-white border-red-600 hover:bg-red-600 shadow-sm hover:shadow-md active:scale-[0.98]'
                       }`}
                     >
-                      <FileCheck size={18} />
+                      <FileCheck size={viewMode === 'mobile' ? 16 : 18} />
                       <span>{vehicle.invoiceCompleted ? 'Invoice Completed' : 'Mark: Invoice Completed'}</span>
                     </button>
 
                     {/* Timestamps Grid */}
-                    <div className="grid grid-cols-3 gap-y-4 gap-x-4 mb-8">
+                    <div className={`grid grid-cols-3 ${viewMode === 'mobile' ? 'gap-y-2 gap-x-2 mb-4' : 'gap-y-4 gap-x-4 mb-8'}`}>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">CIN</span>
-                        <span className="text-xs font-black text-slate-700">{vehicle.checkIn ? new Date(vehicle.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
+                        <span className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 md:mb-1">CIN</span>
+                        <span className={`${viewMode === 'mobile' ? 'text-xs' : 'text-xs'} font-black text-slate-700`}>{vehicle.checkIn ? new Date(vehicle.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">IVC</span>
-                        <span className="text-xs font-black text-slate-700">{vehicle.invoiceCompleted ? new Date(vehicle.invoiceCompleted).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
+                        <span className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 md:mb-1">IVC</span>
+                        <span className={`${viewMode === 'mobile' ? 'text-xs' : 'text-xs'} font-black text-slate-700`}>{vehicle.invoiceCompleted ? new Date(vehicle.invoiceCompleted).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">IVR</span>
-                        <span className="text-xs font-black text-slate-700">{vehicle.invoiceReceiving ? new Date(vehicle.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
+                        <span className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 md:mb-1">IVR</span>
+                        <span className={`${viewMode === 'mobile' ? 'text-xs' : 'text-xs'} font-black text-slate-700`}>{vehicle.invoiceReceiving ? new Date(vehicle.invoiceReceiving).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">CHK</span>
-                        <span className="text-xs font-black text-slate-700">{vehicle.checking ? new Date(vehicle.checking).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
+                        <span className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 md:mb-1">CHK</span>
+                        <span className={`${viewMode === 'mobile' ? 'text-xs' : 'text-xs'} font-black text-slate-700`}>{vehicle.checking ? new Date(vehicle.checking).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">HOV</span>
-                        <span className="text-xs font-black text-slate-700">{vehicle.handover ? new Date(vehicle.handover).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
+                        <span className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 md:mb-1">HOV</span>
+                        <span className={`${viewMode === 'mobile' ? 'text-xs' : 'text-xs'} font-black text-slate-700`}>{vehicle.handover ? new Date(vehicle.handover).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">COT</span>
-                        <span className="text-xs font-black text-slate-700">{vehicle.checkOut ? new Date(vehicle.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
+                        <span className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 md:mb-1">COT</span>
+                        <span className={`${viewMode === 'mobile' ? 'text-xs' : 'text-xs'} font-black text-slate-700`}>{vehicle.checkOut ? new Date(vehicle.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '--:--'}</span>
                       </div>
                     </div>
 
@@ -2671,12 +2672,12 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center"
+              className={`bg-white rounded-3xl shadow-2xl ${viewMode === 'mobile' ? 'max-w-[320px] p-6' : 'max-w-sm p-8'} w-full text-center`}
             >
-              <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-600">
-                {confirm.icon || <AlertCircle size={32} />}
+              <div className={`${viewMode === 'mobile' ? 'w-12 h-12 mb-4' : 'w-16 h-16 mb-6'} bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-600`}>
+                {confirm.icon || <AlertCircle size={viewMode === 'mobile' ? 24 : 32} />}
               </div>
-              <h3 className="text-xl font-bold text-stone-900 mb-2">{confirm.title || 'Confirmation'}</h3>
+              <h3 className={`${viewMode === 'mobile' ? 'text-lg' : 'text-xl'} font-bold text-stone-900 mb-2`}>{confirm.title || 'Confirmation'}</h3>
               <p className="text-stone-500 mb-6 text-sm leading-relaxed whitespace-pre-line">{confirm.message}</p>
               
               {confirm.showRemarkInput && (
